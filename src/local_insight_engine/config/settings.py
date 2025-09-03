@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     
     # External API settings
     llm_api_key: Optional[str] = Field(default=None, env="LLM_API_KEY")
-    llm_model: str = Field(default="claude-3-sonnet-20240229", env="LLM_MODEL")
+    llm_model: str = Field(default="claude-sonnet-4-20250514", env="LLM_MODEL")
     llm_base_url: Optional[str] = Field(default=None, env="LLM_BASE_URL")
     
     # Storage settings

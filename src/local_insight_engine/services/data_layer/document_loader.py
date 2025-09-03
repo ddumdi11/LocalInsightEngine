@@ -27,6 +27,77 @@ class DocumentLoader:
     
     SUPPORTED_FORMATS = {".pdf", ".txt", ".epub", ".docx"}
     
+    def _detect_actual_file_type(self, file_path: Path) -> str:
+        """
+        Detect the actual file type by examining file content, not just extension.
+        
+        Returns:
+            Detected file type ("pdf", "txt", "docx", "epub", "unknown")
+        """
+        try:
+            with open(file_path, 'rb') as f:
+                header = f.read(8)
+            
+            # PDF files start with %PDF
+            if header.startswith(b'%PDF'):
+                return "pdf"
+            
+            # DOCX files are ZIP archives with specific structure
+            if header.startswith(b'PK'):  # ZIP/DOCX signature
+                try:
+                    # Try to open as DOCX to confirm
+                    DocxDocument(str(file_path))
+                    return "docx"
+                except:
+                    pass
+                
+                # Could be EPUB (also ZIP-based)
+                try:
+                    with open(file_path, 'rb') as f:
+                        content = f.read(100)
+                    if b'mimetype' in content and b'epub' in content:
+                        return "epub"
+                except:
+                    pass
+            
+            # Try to decode as text
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    f.read(100)  # Try to read some text
+                return "txt"
+            except UnicodeDecodeError:
+                try:
+                    with open(file_path, 'r', encoding='latin-1') as f:
+                        f.read(100)
+                    return "txt"  # Might be text with different encoding
+                except:
+                    pass
+            
+            return "unknown"
+            
+        except Exception as e:
+            logger.warning(f"Could not detect file type for {file_path}: {e}")
+            return "unknown"
+    
+    def _validate_file_type(self, file_path: Path) -> Tuple[str, bool]:
+        """
+        Validate that file extension matches actual content.
+        
+        Returns:
+            (detected_type, matches_extension)
+        """
+        expected_type = file_path.suffix.lower().lstrip('.')
+        detected_type = self._detect_actual_file_type(file_path)
+        matches = (expected_type == detected_type)
+        
+        if not matches:
+            logger.warning(
+                f"File type mismatch: {file_path.name} "
+                f"has extension '.{expected_type}' but appears to be '{detected_type}'"
+            )
+        
+        return detected_type, matches
+    
     def load(self, file_path: Path) -> Document:
         """
         Load a document and create location mappings.
@@ -47,17 +118,26 @@ class DocumentLoader:
         
         logger.info(f"Loading document: {file_path}")
         
-        # Extract content based on file type
-        if file_path.suffix.lower() == ".pdf":
+        # Validate file type matches extension
+        detected_type, matches_extension = self._validate_file_type(file_path)
+        
+        if not matches_extension:
+            logger.warning(
+                f"File extension mismatch detected! "
+                f"Using detected type '{detected_type}' instead of extension '{file_path.suffix}'"
+            )
+        
+        # Extract content based on DETECTED file type (not extension)
+        if detected_type == "pdf":
             return self._load_pdf(file_path)
-        elif file_path.suffix.lower() == ".txt":
+        elif detected_type == "txt":
             return self._load_text(file_path)
-        elif file_path.suffix.lower() == ".epub":
+        elif detected_type == "epub":
             return self._load_epub(file_path)
-        elif file_path.suffix.lower() == ".docx":
+        elif detected_type == "docx":
             return self._load_docx(file_path)
         else:
-            raise ValueError(f"Handler not implemented for: {file_path.suffix}")
+            raise ValueError(f"Unsupported or undetected file type: {detected_type} for {file_path}")
     
     def _load_pdf(self, file_path: Path) -> Document:
         """Load PDF document with page-level mapping."""
@@ -253,3 +333,29 @@ class DocumentLoader:
         except Exception as e:
             logger.error(f"Failed to load DOCX {file_path}: {e}")
             raise
+    
+    # Public methods for testing and utilities
+    def _is_supported_format(self, file_path: Path) -> bool:
+        """Check if file extension is supported."""
+        return file_path.suffix.lower() in self.SUPPORTED_FORMATS
+    
+    def _get_file_format(self, file_path: Path) -> str:
+        """Get file format from extension."""
+        return file_path.suffix.lower().lstrip('.')
+    
+    def get_file_type_info(self, file_path: Path) -> Dict[str, str]:
+        """
+        Get detailed file type information for debugging/testing.
+        
+        Returns:
+            Dictionary with extension, detected_type, and matches info
+        """
+        expected_type = file_path.suffix.lower().lstrip('.')
+        detected_type, matches = self._validate_file_type(file_path)
+        
+        return {
+            'extension': expected_type,
+            'detected_type': detected_type,
+            'matches': matches,
+            'supported': self._is_supported_format(file_path)
+        }

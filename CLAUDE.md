@@ -17,7 +17,12 @@ The project uses industry-standard tools and follows best practices for scalable
 ## LocalInsightEngine Specific Commands
 
 ### Quick Testing
-- `py test_pdf_processing.py` - Run complete pipeline test with example PDF
+- `py tests/test_multiformat.py` - Multi-format test (TXT preferred, PDF fallback) - **EMPFOHLEN**
+- `py tests/test_multilanguage.py` - Multi-language test (German & English)
+- `py tests/test_file_detection.py` - File type validation test
+- `py tests/test_unit_tests.py` - Unit tests for core components
+- `py tests/test_claude_debug.py` - Claude API debugging & validation
+- `py tests/test_pdf_processing.py` - Legacy PDF-only test
 - `py -c "import spacy; spacy.load('de_core_news_sm'); print('spaCy OK')"` - Test German NLP model
 
 ### SpaCy Models (CRITICAL - Must be installed!)
@@ -38,6 +43,9 @@ results = engine.analyze_document(Path("document.pdf"))
 3. **Test copyright compliance** - no original text should appear in Layer 3 calls
 4. **Use type hints** throughout - this is a typed Python project
 5. **Follow the 3-layer pattern** - don't bypass layers
+6. **File Type Validation** - system detects actual content type vs extension
+7. **Multi-Format Support** - TXT preferred over PDF for better quality
+8. **Claude-4 Integration** - uses latest model: claude-sonnet-4-20250514
 
 ## Development Commands
 

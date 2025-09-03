@@ -9,9 +9,12 @@ Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokument
 - **🔒 Urheberrechtskonform**: Niemals Originaltext an externe APIs
 - **🏗️ 3-Layer-Architektur**: Saubere Trennung von Datenverarbeitung und Analyse  
 - **🇩🇪 Deutsche & Englische NLP**: spaCy-basierte Named Entity Recognition
-- **🤖 Claude AI Integration**: Intelligente Analyse neutralisierter Inhalte
+- **🤖 Claude-4 Integration**: Modernste KI-Analyse mit intelligenten Insights
+- **📁 Multi-Format Support**: PDF, TXT, EPUB, DOCX mit automatischer Erkennung
+- **🔍 File-Type Validation**: Erkennt echten Dateityp unabhängig von Extension
 - **📊 Vollständige Nachverfolgbarkeit**: Jede Erkenntnis zurück zur Quelle verfolgbar
-- **⚡ Produktionsreif**: Moderne Python-Architektur mit Tests und Code Quality
+- **🧪 Umfassende Tests**: Unit-, Integration- und Multi-Language Tests
+- **⚡ Produktionsreif**: Moderne Python-Architektur mit Code Quality
 
 ## 🏛️ Architektur
 
@@ -27,10 +30,10 @@ Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokument
 - **Copyright-Compliance**: Vollständige Neutralisierung vor externer Übertragung
 
 ### Layer 3: Analyse-Layer (`analysis_engine`)
-- **Claude API Integration**: Tiefgreifende KI-Analyse
-- **Strukturierte Outputs**: Erkenntnisse, Fragen, Widersprüche
-- **JSON-Format**: Maschinenlesbare Ergebnisse
-- **Mock-Modus**: Funktioniert auch ohne API-Key
+- **Claude-4 API Integration**: Modernste KI-Analyse mit intelligenten Insights
+- **Robuste JSON-Parsing**: Automatische Fallback-Mechanismen
+- **Strukturierte Outputs**: Erkenntnisse, Fragen, Zusammenfassungen
+- **Mock-Modus**: Funktioniert auch ohne API-Key für Tests
 
 ## 🚀 Installation
 
@@ -73,11 +76,25 @@ echo "LLM_API_KEY=your-claude-api-key" > .env
 
 ## 🎯 Nutzung
 
-### Einfacher Test
+### Tests & Validierung
 ```bash
-# Stelle deine PDF in das Projektverzeichnis
-# Dann führe den Test aus:
-py test_pdf_processing.py
+# Multi-Format Test (TXT bevorzugt, PDF Fallback) - EMPFOHLEN
+py tests/test_multiformat.py
+
+# Multi-Language Test (Deutsch & Englisch)  
+py tests/test_multilanguage.py
+
+# File-Type Detection & Validation
+py tests/test_file_detection.py
+
+# Unit Tests für Core-Komponenten
+py tests/test_unit_tests.py
+
+# Claude API Debugging
+py tests/test_claude_debug.py
+
+# Legacy PDF-only Test
+py tests/test_pdf_processing.py
 ```
 
 ### Programmatische Nutzung
@@ -121,7 +138,7 @@ SUCCESS: Text processed successfully!
 [ANALYSIS] Running Claude analysis...
 SUCCESS: Claude analysis completed!
    - Status: success
-   - Model: claude-3-sonnet-20240229
+   - Model: claude-sonnet-4-20250514
    - Confidence: 0.87
    - Insights: 15
    - Questions: 8

@@ -48,54 +48,32 @@ Deine Aufgabe: Erstelle aus den neutralisierten Daten eine strukturierte Analyse
 4. Intelligenten Nachfragen für weitere Analysen
 5. Zusammenfassung der Kernthemen"""
 
-        self.analysis_prompt = """Analysiere die folgenden neutralisierten Textdaten und erstelle eine strukturierte Analyse:
+        self.analysis_prompt = """Analysiere die folgenden neutralisierten Textdaten:
 
-=== NEUTRALISIERTE DATEN ===
+=== DATEN ===
 {content}
 
-=== EXTRAHIERTE ENTITÄTEN ===
-{entities}
-
-=== IDENTIFIZIERTE THEMEN ===
+=== THEMEN ===
 {themes}
 
 === STATISTIKEN ===
-- Anzahl Chunks: {chunk_count}
-- Anzahl Entitäten: {entity_count}
-- Hauptkategorien: {entity_types}
+Chunks: {chunk_count}, Entitäten: {entity_count}
 
-Bitte erstelle eine Analyse im folgenden JSON-Format:
+Erstelle eine Analyse im JSON-Format:
 
-{
-  "executive_summary": "Kurze Zusammenfassung der wichtigsten Erkenntnisse",
+{{
+  "executive_summary": "Haupterkenntnisse in 2-3 Sätzen",
   "main_insights": [
-    {
-      "title": "Titel der Erkenntnis",
-      "content": "Detaillierte Beschreibung",
-      "confidence": 0.8,
-      "category": "pattern/contradiction/synthesis"
-    }
+    {{
+      "title": "Erkenntnis-Titel",
+      "content": "Beschreibung",
+      "confidence": 0.8
+    }}
   ],
-  "key_relationships": {
-    "Beziehungstyp": ["Konzept A", "Konzept B", "Konzept C"]
-  },
-  "contradictions": [
-    "Beschreibung identifizierter Widersprüche"
-  ],
-  "follow_up_questions": [
-    {
-      "question": "Intelligente Nachfrage",
-      "context": "Kontext der Frage",
-      "priority": 4
-    }
-  ],
-  "knowledge_gaps": [
-    "Identifizierte Wissenslücken"
-  ],
-  "recommendations": [
-    "Empfehlungen für weitere Analysen"
-  ]
-}"""
+  "follow_up_questions": []
+}}
+
+Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen."""
 
     def _initialize_client(self):
         """Initialize Claude API client."""
@@ -246,10 +224,12 @@ Bitte erstelle eine Analyse im folgenden JSON-Format:
             
         except json.JSONDecodeError as e:
             logger.warning(f"Failed to parse Claude JSON response: {e}")
+            logger.debug(f"Response text excerpt: {response_text[:200]}...")
             return self._create_text_analysis(response_text, processed_text, start_time)
         except Exception as e:
             logger.error(f"Error parsing Claude response: {e}")
-            return self._mock_analysis(processed_text)
+            logger.debug(f"Raw response: {response_text[:300]}...")
+            return self._create_text_analysis(response_text, processed_text, start_time)
 
     def _extract_from_text(self, text: str) -> Dict[str, Any]:
         """Extract structured data from plain text response."""

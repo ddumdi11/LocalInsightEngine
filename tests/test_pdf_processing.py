@@ -7,8 +7,9 @@ import random
 from pathlib import Path
 
 # Add src to path so we can import our modules
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
+import os
 from local_insight_engine.services.data_layer.document_loader import DocumentLoader
 from local_insight_engine.services.processing_hub.text_processor import TextProcessor
 from local_insight_engine.services.analysis_engine.claude_client import ClaudeClient
@@ -17,8 +18,14 @@ from local_insight_engine.config.settings import Settings
 def test_pdf_processing():
     """Test the PDF processing pipeline."""
     
-    # Path to test PDF
-    pdf_path = Path(r"C:\Users\diede\source\ClaudeProjekte\LocalInsightEngine\G-OMX-Readbook - zarko maroli Copy.pdf")
+    # Change to project root directory so .env file is found
+    original_cwd = os.getcwd()
+    project_root = Path(__file__).parent.parent
+    os.chdir(project_root)
+    
+    try:
+        # Path to test PDF
+        pdf_path = project_root / "german_sample.pdf"
     
     if not pdf_path.exists():
         print(f"ERROR: Test PDF not found: {pdf_path}")
@@ -147,11 +154,14 @@ def test_pdf_processing():
         
         print("SUCCESS: Complete pipeline test completed!")
         print("INFO: PDF -> Processing -> Claude analysis pipeline working correctly.")
-        
+    
     except Exception as e:
         print(f"ERROR: Error during processing: {e}")
         import traceback
         traceback.print_exc()
+    finally:
+        # Restore original working directory
+        os.chdir(original_cwd)
 
 if __name__ == "__main__":
     test_pdf_processing()
