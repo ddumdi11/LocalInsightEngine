@@ -281,5 +281,6 @@ Falls du Probleme findest:
 Bei weiteren Fragen öffne ein [Issue](https://github.com/your-username/LocalInsightEngine/issues).
 
 ---
+**📧 Kontakt: @ (auf Anfrage) | 💼 LinkedIn: www.linkedin.com/in/thorsten-diederichs-a05051203
 
 **Made with ❤️ for copyright-compliant document analysis**
