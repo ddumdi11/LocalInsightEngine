@@ -14,6 +14,33 @@ This is a **LocalInsightEngine** - a sophisticated Python application for copyri
 
 The project uses industry-standard tools and follows best practices for scalable application development.
 
+## CRITICAL ISSUES TO RESOLVE
+
+### ⚠️ ANONYMIZATION FAILURE DETECTED (January 2025)
+**Problem:** Canary phrase tests FAILED - original text appears in JSON exports
+- `test_canary_phrases_not_in_json_export`: Found 2 canary phrases in export
+- `test_neutralized_vs_original_content_separation`: Neutralized content contains canaries
+
+**Root Cause:** Statement neutralization not working as expected
+**Impact:** COPYRIGHT COMPLIANCE VIOLATION
+**Priority:** CRITICAL - Must fix before production use
+
+**Investigation needed:**
+- Check `statement_extractor.py` neutralization logic
+- Verify that only `neutralized_content` reaches JSON export
+- Review `_create_abstract_version` method effectiveness
+- Test with different text types and languages
+
+**Files to investigate:**
+- `src/local_insight_engine/services/processing_hub/statement_extractor.py`
+- `src/local_insight_engine/services/export/json_exporter.py`
+- `tests/test_anonymization_proof.py` (failing tests)
+
+### 📁 File Type Detection Enhancement Needed
+**Problem:** Fake PDFs processed without warning
+**Solution:** Add clear warnings when file extension doesn't match content type
+**Files:** `src/local_insight_engine/services/data_layer/document_loader.py`
+
 ## LocalInsightEngine Specific Commands
 
 ### Quick Testing

@@ -247,13 +247,17 @@ MAX_API_REQUESTS=20
 - [x] Claude API-Client
 - [x] Statement-Neutralisierung
 - [x] Komplette Test-Pipeline
-- [x] Copyright-Compliance
+- [x] **JSON Export-Funktionalität** (CLI, Start.bat, programmatisch)
+- [x] **Export Unit-Tests** mit Anonymization Proof Tests
+- [⚠️] Copyright-Compliance (needs review - canary tests failed)
 
 ### 🚧 Geplant (v0.2.0)
+- [⚠️] **CRITICAL: Fix Anonymization Issues** (canary phrases in export detected)
+- [ ] Add file-type detection warnings for fake PDFs
+- [ ] CSV/PDF Export-Formate  
 - [ ] Web-Interface (FastAPI + React)
 - [ ] Batch-Processing für multiple Dokumente
 - [ ] Erweiterte Visualisierungen
-- [ ] Export nach JSON/CSV/PDF
 - [ ] Verbessertes Caching
 - [ ] Plugin-System für andere LLMs
 

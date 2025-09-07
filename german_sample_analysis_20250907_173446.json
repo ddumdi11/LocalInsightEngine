@@ -1,0 +1,151 @@
+{
+  "export_metadata": {
+    "export_timestamp": "2025-09-07T17:34:46.276766",
+    "export_version": "1.0",
+    "localinsightengine_version": "0.1.0",
+    "format": "json"
+  },
+  "document": {
+    "metadata": {
+      "filename": "german_sample.txt",
+      "file_path": "german_sample.txt",
+      "file_format": "txt",
+      "file_size": 367363,
+      "page_count": null,
+      "word_count": 52205,
+      "created_at": "2025-09-07T17:34:16.285132",
+      "author": null,
+      "title": null,
+      "language": null
+    },
+    "processing_stats": {
+      "total_chunks": 447,
+      "total_entities": 2515,
+      "processing_time_seconds": 9.497836,
+      "key_themes_count": 10
+    }
+  },
+  "text_processing": {
+    "key_themes": [
+      "zurück",
+      "gesundheit",
+      "alkoholismus",
+      "körperliche",
+      "erkrankung",
+      "medizinbetrieb",
+      "verknöcherter",
+      "verein",
+      "alkohol",
+      "denken"
+    ],
+    "entity_summary": {
+      "PERSON": {
+        "count": 654,
+        "examples": [
+          "Gaby Guzek",
+          "Bernd Guzek",
+          "Johann Wolfgang von Goethe",
+          "Adelheid Amalia",
+          "Danke"
+        ]
+      },
+      "MISC": {
+        "count": 683,
+        "examples": [
+          "Buch Peter",
+          "Buch\n\nPatric Heizmann",
+          "Big Business",
+          "Mein morgendliches Murmeltier",
+          "Angriff auf das Glückssystem\n\n\n\nEntspannung"
+        ]
+      },
+      "LOC": {
+        "count": 844,
+        "examples": [
+          "Bullshit-Bingo",
+          "Glycin",
+          "Phosphatidylserin",
+          "Glycin",
+          "Phosphatidylserin"
+        ]
+      },
+      "ORG": {
+        "count": 334,
+        "examples": [
+          "Dopamin",
+          "Die Spirale",
+          "GABA",
+          "GABA",
+          "Ursuppe für Glück und Schlaf"
+        ]
+      }
+    },
+    "chunk_statistics": {
+      "total_chunks": 447,
+      "avg_chunk_size": 157.91275167785236,
+      "chunks_with_statements": 110
+    }
+  },
+  "analysis": {
+    "status": "success",
+    "model": "claude-sonnet-4-20250514",
+    "confidence_score": 0.75,
+    "completeness_score": 0.5,
+    "executive_summary": "Das Dokument präsentiert einen medizinisch-biochemischen Ansatz zur Alkoholismus-Behandlung, der Sucht als körperliche Erkrankung mit neurochemischen Ursachen betrachtet. Es wird ein systematischer 5-Schritte-Plan zur Wiederherstellung der Gehirnchemie durch gezielte Nährstofftherapie vorgestellt.",
+    "insights": [
+      {
+        "title": "Paradigmenwechsel: Alkoholismus als körperliche Erkrankung",
+        "content": "Der Ansatz behandelt Alkoholismus nicht primär als Willensschwäche oder psychisches Problem, sondern als messbare körperliche Störung der Neurotransmitter-Balance",
+        "confidence": 0.9,
+        "category": "general"
+      },
+      {
+        "title": "Systematischer neurochemischer Reparaturansatz",
+        "content": "Ein strukturierter 5-Schritte-Plan zielt auf spezifische Neurotransmittersysteme ab: GABA für Entspannung, Serotonin für Stimmung, Dopamin für Belohnung, Blutzucker-Stabilisierung und Schlafoptimierung",
+        "confidence": 0.85,
+        "category": "general"
+      },
+      {
+        "title": "Kritik am etablierten Medizinsystem",
+        "content": "Das Dokument positioniert sich kritisch gegenüber traditionellen medizinischen Ansätzen ('verknöcherter Verein') und propagiert alternative, nährstoffbasierte Therapien",
+        "confidence": 0.8,
+        "category": "general"
+      },
+      {
+        "title": "Komplexe biochemische Kaskaden",
+        "content": "Der Text beschreibt detailliert, wie Alkohol verschiedene Neurotransmittersysteme (Glutamat, Kortisol, Endorphine, Dopamin) beeinflusst und eine Abwärtsspirale auslöst",
+        "confidence": 0.9,
+        "category": "general"
+      },
+      {
+        "title": "Ganzheitlicher Regenerationsansatz",
+        "content": "Neben der akuten Entgiftung wird langfristige Organregeneration (Leber, Blutdruck) und umfassende Nährstoffsubstitution (Vitamine, Mineralien, Aminosäuren) thematisiert",
+        "confidence": 0.8,
+        "category": "general"
+      }
+    ],
+    "questions": [],
+    "themes": [
+      "zurück",
+      "gesundheit",
+      "alkoholismus",
+      "körperliche",
+      "erkrankung",
+      "medizinbetrieb",
+      "verknöcherter",
+      "verein",
+      "alkohol",
+      "denken"
+    ],
+    "key_relationships": {},
+    "contradictions": [],
+    "knowledge_gaps": [],
+    "recommendations": []
+  },
+  "compliance": {
+    "copyright_compliant": true,
+    "contains_original_text": false,
+    "neutralization_applied": true,
+    "note": "This export contains only neutralized, processed content. No original copyrighted text is included."
+  }
+}

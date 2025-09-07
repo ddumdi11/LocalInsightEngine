@@ -3,10 +3,12 @@ rem LocalInsightEngine v0.1.0 - Start Script
 rem Copyright-compliant document analysis with 3-layer architecture
 rem
 rem Usage:
-rem   Start.bat                    - Show help
-rem   Start.bat document.pdf       - Analyze document 
-rem   Start.bat --version          - Show version info
-rem   Start.bat --test             - Run quick test suite
+rem   Start.bat                             - Show help
+rem   Start.bat document.pdf                - Analyze document 
+rem   Start.bat document.pdf --export       - Analyze and export to JSON
+rem   Start.bat document.pdf --export --format json --output results - Custom export
+rem   Start.bat --version                   - Show version info
+rem   Start.bat --test                      - Run quick test suite
 
 setlocal enabledelayedexpansion
 
@@ -61,11 +63,23 @@ if not exist "%1" (
     exit /b 1
 )
 
-rem Run analysis
+rem Run analysis with all parameters
 echo [START] LocalInsightEngine v0.1.0
 echo [INFO] Analyzing document: %1
+
+rem Check if export parameters are present
+set EXPORT_INFO=
+if "%2"=="--export" (
+    set EXPORT_INFO=with JSON export
+)
+if not "%EXPORT_INFO%"=="" (
+    echo [INFO] Export enabled %EXPORT_INFO%
+)
 echo.
-python -m local_insight_engine.main "%1"
+
+rem Set PYTHONPATH to include src directory and run analysis
+set PYTHONPATH=%CD%\src;%PYTHONPATH%
+python -m local_insight_engine.main %*
 
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -82,17 +96,21 @@ goto end
 echo LocalInsightEngine v0.1.0 - Copyright-compliant document analysis
 echo.
 echo Usage:
-echo   Start.bat document.pdf       Analyze a document
-echo   Start.bat --version          Show version information  
-echo   Start.bat --test             Run quick test suite
-echo   Start.bat --help             Show this help
+echo   Start.bat document.pdf                           Analyze a document
+echo   Start.bat document.pdf --export                  Analyze and export to JSON
+echo   Start.bat document.pdf --export --output results Export with custom output path
+echo   Start.bat --version                              Show version information  
+echo   Start.bat --test                                 Run quick test suite
+echo   Start.bat --help                                 Show this help
 echo.
 echo Supported formats: PDF, TXT, EPUB, DOCX
+echo Export formats: JSON (CSV, PDF coming in v0.2.0)
 echo.
 echo Examples:
 echo   Start.bat example.pdf
-echo   Start.bat "C:\Documents\My Book.txt"
-echo   Start.bat research.epub
+echo   Start.bat example.pdf --export
+echo   Start.bat "C:\Documents\My Book.txt" --export --output "C:\Results\analysis"
+echo   Start.bat research.epub --export
 echo.
 
 :end
