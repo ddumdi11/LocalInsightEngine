@@ -1,5 +1,6 @@
 """
 Unit tests for individual functions and components.
+LocalInsightEngine v0.1.0 - Unit tests for core components
 """
 
 import sys

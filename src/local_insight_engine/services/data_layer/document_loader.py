@@ -1,5 +1,6 @@
 """
 Document loader for Layer 1 - handles PDF, EPUB, and text files.
+LocalInsightEngine v0.1.0 - Layer 1: Data Layer
 """
 
 import logging

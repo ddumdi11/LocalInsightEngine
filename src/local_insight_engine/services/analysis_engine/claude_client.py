@@ -1,5 +1,6 @@
 """
 Real Claude API client for Layer 3 analysis.
+LocalInsightEngine v0.1.0 - Layer 3: Analysis Engine
 """
 
 import logging

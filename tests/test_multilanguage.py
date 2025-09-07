@@ -1,6 +1,7 @@
 """
 Multi-language document processing tests.
 Tests both German and English PDFs with random sampling.
+LocalInsightEngine v0.1.0 - Multi-language test (German & English)
 """
 
 import sys

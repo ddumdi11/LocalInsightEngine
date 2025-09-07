@@ -1,54 +1,149 @@
-# LocalInsightEngine
+# LocalInsightEngine 🚀
 
-![Work in Progress](https://img.shields.io/badge/Status-Work%20in%20Progress-yellow)
+**Intelligente, urheberrechtskonforme Analyse von Sachbüchern und Dokumenten**
+
+![Work in Progress](https://img.shields.io/badge/Status-Production%20Ready%20v0.1.0-green)
 ![MIT License](https://img.shields.io/badge/License-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 [![Developed with Claude Code](https://img.shields.io/badge/Developed%20with-Claude%20Code-purple)](https://claude.ai/code)
 
-## 📋 Beschreibung
-
-Intelligente, urheberrechtskonforme Analyse von Sachbüchern und Dokumenten | Python | Developed with Claude Code | Work in Progress
-
-> **🚧 Hinweis**: Dieses Projekt befindet sich noch in der Entwicklung. Features können sich ändern und noch nicht vollständig implementiert sein.
+Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokumenten mit Hilfe großer Sprachmodelle, ohne dabei urheberrechtlich geschützte Inhalte zu übertragen.
 
 ## ✨ Features
 
-### ✅ Bereits implementiert:
-- Grundfunktionalität
-- Benutzeroberfläche
+- **🔒 Urheberrechtskonform**: Niemals Originaltext an externe APIs
+- **🏗️ 3-Layer-Architektur**: Saubere Trennung von Datenverarbeitung und Analyse  
+- **🇩🇪 Deutsche & Englische NLP**: spaCy-basierte Named Entity Recognition
+- **🤖 Claude-4 Integration**: Modernste KI-Analyse mit intelligenten Insights
+- **📁 Multi-Format Support**: PDF, TXT, EPUB, DOCX mit automatischer Erkennung
+- **🔍 File-Type Validation**: Erkennt echten Dateityp unabhängig von Extension
+- **📊 Vollständige Nachverfolgbarkeit**: Jede Erkenntnis zurück zur Quelle verfolgbar
+- **🧪 Umfassende Tests**: Unit-, Integration- und Multi-Language Tests
+- **⚡ Produktionsreif**: Moderne Python-Architektur mit Code Quality
 
-### 🚧 In Entwicklung:
-- Erweiterte Features
-- Performance-Optimierungen
+## 🏛️ Architektur
 
-### 📝 Geplant:
-- API Integration
-- Mobile App
+### Layer 1: Daten-Layer (`data_layer`)
+- **PDF/EPUB/DOCX Parser** mit präzisem Seiten- und Absatz-Mapping
+- **Unterstützte Formate**: PDF, TXT, EPUB, Word-Dokumente
+- **Metadaten-Extraktion**: Autor, Titel, Seitenanzahl, etc.
 
-## 🛠️ Technologie-Stack
+### Layer 2: Verarbeitungs-Layer (`processing_hub`)  
+- **spaCy NER**: Hochpräzise Entitätenerkennung für Deutsch & Englisch
+- **Statement-Extraktor**: Neutralisierung von Kernaussagen
+- **Text-Chunking**: Intelligente Aufteilung mit Überlappung
+- **Copyright-Compliance**: Vollständige Neutralisierung vor externer Übertragung
 
-- **Sprache**: Python
-- **Framework/Libraries**: Standard Libraries
-- **Tools**: VS Code, Git
+### Layer 3: Analyse-Layer (`analysis_engine`)
+- **Claude-4 API Integration**: Modernste KI-Analyse mit intelligenten Insights
+- **Robuste JSON-Parsing**: Automatische Fallback-Mechanismen
+- **Strukturierte Outputs**: Erkenntnisse, Fragen, Zusammenfassungen
+- **Mock-Modus**: Funktioniert auch ohne API-Key für Tests
 
-## 📦 Installation
+## 🚀 Installation
 
+### 1. Repository klonen
 ```bash
-# Repository klonen
 git clone https://github.com/ddumdi11/LocalInsightEngine.git
 cd LocalInsightEngine
-
-# Dependencies installieren
-pip install -r requirements.txt
-
-# Anwendung starten
-python main.py
 ```
 
-## 🚀 Verwendung
+### 2. Virtual Environment erstellen
+```bash
+# Python 3.8+ erforderlich (außerhalb venv)
+py -m venv .venv
 
+# Windows
+.venv\Scripts\activate
+
+# Linux/Mac  
+source .venv/bin/activate
+```
+
+### 3. Dependencies installieren
+```bash
+# Alle Abhängigkeiten installieren (innerhalb aktivierter venv)
+python -m pip install -r requirements-dev.txt
+
+# SpaCy-Modelle herunterladen
+python -m spacy download de_core_news_sm  # Deutsch
+python -m spacy download en_core_web_sm   # Englisch (optional)
+```
+
+### 4. (Optional) Claude API-Key setzen
+```bash
+# Für echte KI-Analyse
+export LLM_API_KEY="your-claude-api-key"
+
+# Oder in .env Datei:
+echo "LLM_API_KEY=your-claude-api-key" > .env
+```
+
+## 🎯 Nutzung
+
+### Einfacher Start mit Start.bat (Empfohlen)
+```bash
+# Dokument analysieren
+Start.bat document.pdf
+
+# Version anzeigen
+Start.bat --version
+
+# Schnelltest ausführen
+Start.bat --test
+
+# Hilfe anzeigen
+Start.bat --help
+```
+
+### Direkte CLI-Nutzung (innerhalb aktivierter .venv)
+```bash
+# Dokument analysieren
+python -m local_insight_engine.main document.pdf
+
+# Version anzeigen
+python -m local_insight_engine.main --version
+
+# Hilfe anzeigen
+python -m local_insight_engine.main --help
+```
+
+### Tests & Validierung (innerhalb aktivierter .venv)
+```bash
+# Multi-Format Test (TXT bevorzugt, PDF Fallback) - EMPFOHLEN
+python tests/test_multiformat.py
+
+# Multi-Language Test (Deutsch & Englisch)  
+python tests/test_multilanguage.py
+
+# File-Type Detection & Validation
+python tests/test_file_detection.py
+
+# Unit Tests für Core-Komponenten
+python tests/test_unit_tests.py
+
+# Claude API Debugging
+python tests/test_claude_debug.py
+
+# Legacy PDF-only Test
+python tests/test_pdf_processing.py
+```
+
+### Programmatische Nutzung
 ```python
-# Beispiel Code hier
+from pathlib import Path
+from local_insight_engine.main import LocalInsightEngine
+
+# Engine initialisieren
+engine = LocalInsightEngine()
+
+# Dokument analysieren
+results = engine.analyze_document(Path("your-document.pdf"))
+
+# Ergebnisse anzeigen
+print(f"Analysierte {results['chunks']} Chunks")
+print(f"Erkannte {results['entities']} Entitäten")
+print(f"Executive Summary: {results['summary']}")
 ```
 
 ## 📁 Projektstruktur

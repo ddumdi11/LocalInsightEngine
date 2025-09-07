@@ -1,5 +1,6 @@
 """
 Debug Claude API JSON parsing issues.
+LocalInsightEngine v0.1.0 - Claude API debugging & validation
 """
 
 import sys

@@ -1,5 +1,6 @@
 """
 Text processor for Layer 2 - neutralizes content and extracts key information.
+LocalInsightEngine v0.1.0 - Layer 2: Processing Hub
 """
 
 import logging

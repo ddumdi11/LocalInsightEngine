@@ -57,9 +57,35 @@ class LocalInsightEngine:
 def main():
     """CLI entry point."""
     import sys
+    from . import __version__
+    
+    # Handle version flag
+    if len(sys.argv) == 2 and sys.argv[1] in ["--version", "-v"]:
+        print(f"LocalInsightEngine v{__version__}")
+        sys.exit(0)
+    
+    # Handle help flag
+    if len(sys.argv) == 2 and sys.argv[1] in ["--help", "-h"]:
+        print("LocalInsightEngine - Copyright-compliant document analysis")
+        print(f"Version: {__version__}")
+        print()
+        print("Usage:")
+        print("  python -m local_insight_engine.main <document_path>")
+        print("  python -m local_insight_engine.main --version")
+        print("  python -m local_insight_engine.main --help")
+        print()
+        print("Arguments:")
+        print("  document_path    Path to PDF, TXT, EPUB, or DOCX file to analyze")
+        print()
+        print("Options:")
+        print("  --version, -v    Show version information")
+        print("  --help, -h       Show this help message")
+        sys.exit(0)
     
     if len(sys.argv) != 2:
+        print("LocalInsightEngine - Copyright-compliant document analysis")
         print("Usage: python -m local_insight_engine.main <document_path>")
+        print("       python -m local_insight_engine.main --help")
         sys.exit(1)
     
     document_path = Path(sys.argv[1])

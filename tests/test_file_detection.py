@@ -1,5 +1,6 @@
 """
 Test file type detection and validation.
+LocalInsightEngine v0.1.0 - File type validation test
 """
 
 import sys

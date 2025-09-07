@@ -17,6 +17,8 @@ The project uses industry-standard tools and follows best practices for scalable
 ## LocalInsightEngine Specific Commands
 
 ### Quick Testing
+
+**Outside virtual environment (.venv deactivated):**
 - `py tests/test_multiformat.py` - Multi-format test (TXT preferred, PDF fallback) - **EMPFOHLEN**
 - `py tests/test_multilanguage.py` - Multi-language test (German & English)
 - `py tests/test_file_detection.py` - File type validation test
@@ -25,10 +27,26 @@ The project uses industry-standard tools and follows best practices for scalable
 - `py tests/test_pdf_processing.py` - Legacy PDF-only test
 - `py -c "import spacy; spacy.load('de_core_news_sm'); print('spaCy OK')"` - Test German NLP model
 
+**Inside virtual environment (.venv activated):**
+- `python tests/test_multiformat.py` - Multi-format test (TXT preferred, PDF fallback) - **EMPFOHLEN**
+- `python tests/test_multilanguage.py` - Multi-language test (German & English)
+- `python tests/test_file_detection.py` - File type validation test
+- `python tests/test_unit_tests.py` - Unit tests for core components
+- `python tests/test_claude_debug.py` - Claude API debugging & validation
+- `python tests/test_pdf_processing.py` - Legacy PDF-only test
+- `python -c "import spacy; spacy.load('de_core_news_sm'); print('spaCy OK')"` - Test German NLP model
+
 ### SpaCy Models (CRITICAL - Must be installed!)
+
+**Outside virtual environment (.venv deactivated):**
 - `py -m spacy download de_core_news_sm` - Download German NER model (REQUIRED)
 - `py -m spacy download en_core_web_sm` - Download English NER model (optional)  
 - `py -m spacy info` - Show installed spaCy models
+
+**Inside virtual environment (.venv activated):**
+- `python -m spacy download de_core_news_sm` - Download German NER model (REQUIRED)
+- `python -m spacy download en_core_web_sm` - Download English NER model (optional)  
+- `python -m spacy info` - Show installed spaCy models
 
 ### Running the Engine
 ```python
@@ -50,19 +68,35 @@ results = engine.analyze_document(Path("document.pdf"))
 ## Development Commands
 
 ### Environment Management
+
+**Setup (outside virtual environment):**
 - `py -m venv .venv` - Create virtual environment
+
+**Activation/Deactivation:**
 - `source .venv/bin/activate` (Linux/Mac) or `.venv\Scripts\activate` (Windows) - Activate virtual environment
 - `deactivate` - Deactivate virtual environment
-- `pip install -r requirements.txt` - Install dependencies
-- `pip install -r requirements-dev.txt` - Install development dependencies
+
+**Package Installation (inside activated .venv):**
+- `python -m pip install -r requirements.txt` - Install dependencies
+- `python -m pip install -r requirements-dev.txt` - Install development dependencies
 
 ### Package Management
-- `py -m pip install <package>` - Install a package
-- `py -m pip install -e .` - Install project in development mode
+
+**Outside virtual environment (.venv deactivated):**
+- `py -m pip install <package>` - Install a package globally
+- `py -m pip install -e .` - Install project globally in development mode
 - `py -m pip freeze > requirements.txt` - Generate requirements file
 - `py -m pip-tools compile requirements.in` - Compile requirements with pip-tools
 
+**Inside virtual environment (.venv activated):**
+- `python -m pip install <package>` - Install a package in venv
+- `python -m pip install -e .` - Install project in venv development mode
+- `python -m pip freeze > requirements.txt` - Generate venv requirements file
+- `python -m pip-tools compile requirements.in` - Compile requirements with pip-tools
+
 ### Testing Commands
+
+**Outside virtual environment (.venv deactivated):**
 - `py -m pytest` - Run all tests
 - `py -m pytest -v` - Run tests with verbose output
 - `py -m pytest --cov` - Run tests with coverage report
@@ -71,7 +105,18 @@ results = engine.analyze_document(Path("document.pdf"))
 - `py -m pytest -k "test_name"` - Run specific test by name
 - `py -m unittest` - Run tests with unittest
 
+**Inside virtual environment (.venv activated):**
+- `python -m pytest` - Run all tests
+- `python -m pytest -v` - Run tests with verbose output
+- `python -m pytest --cov` - Run tests with coverage report
+- `python -m pytest --cov-report=html` - Generate HTML coverage report
+- `python -m pytest -x` - Stop on first failure
+- `python -m pytest -k "test_name"` - Run specific test by name
+- `python -m unittest` - Run tests with unittest
+
 ### Code Quality Commands
+
+**Outside virtual environment (.venv deactivated):**
 - `py -m black .` - Format code with Black
 - `py -m black --check .` - Check code formatting without changes
 - `py -m isort .` - Sort imports
@@ -80,11 +125,28 @@ results = engine.analyze_document(Path("document.pdf"))
 - `py -m pylint src/` - Run linting with Pylint
 - `py -m mypy .` - Run type checking with MyPy
 
+**Inside virtual environment (.venv activated):**
+- `python -m black .` - Format code with Black
+- `python -m black --check .` - Check code formatting without changes
+- `python -m isort .` - Sort imports
+- `python -m isort --check-only .` - Check import sorting
+- `python -m flake8` - Run linting with Flake8
+- `python -m pylint src/` - Run linting with Pylint
+- `python -m mypy .` - Run type checking with MyPy
+
 ### Development Tools
+
+**Outside virtual environment (.venv deactivated):**
 - `py -m pip install --upgrade pip` - Upgrade pip
 - `py -c "import sys; print(sys.version)"` - Check Python version
 - `py -m site` - Show Python site information
 - `py -m pdb script.py` - Debug with pdb
+
+**Inside virtual environment (.venv activated):**
+- `python -m pip install --upgrade pip` - Upgrade pip
+- `python -c "import sys; print(sys.version)"` - Check Python version
+- `python -m site` - Show Python site information
+- `python -m pdb script.py` - Debug with pdb
 
 ## Technology Stack
 
@@ -209,7 +271,7 @@ addopts = "--cov=src --cov-report=term-missing"
 
 ### Creation and Activation
 ```bash
-# Create virtual environment
+# Create virtual environment (outside venv)
 py -m venv .venv
 
 # Activate (Linux/Mac)
@@ -218,9 +280,9 @@ source .venv/bin/activate
 # Activate (Windows)
 .venv\Scripts\activate
 
-# Install dependencies
-py -m pip install -r requirements.txt
-py -m pip install -r requirements-dev.txt
+# Install dependencies (inside activated venv)
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
 ```
 
 ### Requirements Management
@@ -248,12 +310,22 @@ project_name/
 ```
 
 ### Common Commands
+
+**Outside virtual environment (.venv deactivated):**
 - `py manage.py runserver` - Start development server
 - `py manage.py migrate` - Apply database migrations
 - `py manage.py makemigrations` - Create new migrations
 - `py manage.py createsuperuser` - Create admin user
 - `py manage.py collectstatic` - Collect static files
 - `py manage.py test` - Run Django tests
+
+**Inside virtual environment (.venv activated):**
+- `python manage.py runserver` - Start development server
+- `python manage.py migrate` - Apply database migrations
+- `python manage.py makemigrations` - Create new migrations
+- `python manage.py createsuperuser` - Create admin user
+- `python manage.py collectstatic` - Collect static files
+- `python manage.py test` - Run Django tests
 
 ## FastAPI-Specific Guidelines
 
@@ -277,14 +349,28 @@ src/
 ```
 
 ### Common Commands
+
+**Outside virtual environment (.venv deactivated):**
 - `py -m uvicorn main:app --reload` - Start development server
 - `py -m uvicorn main:app --host 0.0.0.0 --port 8000` - Start production server
+
+**Inside virtual environment (.venv activated):**
+- `python -m uvicorn main:app --reload` - Start development server
+- `python -m uvicorn main:app --host 0.0.0.0 --port 8000` - Start production server
 
 ## Security Guidelines
 
 ### Dependencies
+
+**Outside virtual environment (.venv deactivated):**
 - Regularly update dependencies with `py -m pip list --outdated`
 - Use `py -m safety check` to check for known vulnerabilities
+- Pin dependency versions in requirements files
+- Use virtual environments to isolate dependencies
+
+**Inside virtual environment (.venv activated):**
+- Regularly update dependencies with `python -m pip list --outdated`
+- Use `python -m safety check` to check for known vulnerabilities
 - Pin dependency versions in requirements files
 - Use virtual environments to isolate dependencies
 
@@ -299,9 +385,10 @@ src/
 
 ### Before Starting
 1. Check Python version compatibility
-2. Create and activate virtual environment
-3. Install dependencies from requirements files
-4. Run type checking with `py -m mypy .`
+2. Create virtual environment with `py -m venv .venv` (outside venv)
+3. Activate virtual environment (`.venv\Scripts\activate` on Windows)
+4. Install dependencies from requirements files with `python -m pip install` (inside venv)
+5. Run type checking with `python -m mypy .` (inside venv)
 
 ### During Development
 1. Use type hints for better code documentation
@@ -309,9 +396,9 @@ src/
 3. Use meaningful commit messages
 4. Format code with Black before committing
 
-### Before Committing
-1. Run full test suite: `py -m pytest`
-2. Check code formatting: `py -m black --check .`
-3. Sort imports: `py -m isort --check-only .`
-4. Run linting: `py -m flake8`
-5. Run type checking: `py -m mypy .`
+### Before Committing (inside activated .venv)
+1. Run full test suite: `python -m pytest`
+2. Check code formatting: `python -m black --check .`
+3. Sort imports: `python -m isort --check-only .`
+4. Run linting: `python -m flake8`
+5. Run type checking: `python -m mypy .`

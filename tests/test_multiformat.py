@@ -2,6 +2,7 @@
 Multi-format document processing tests.
 Tests TXT files first (preferred), then PDFs as fallback.
 Supports both German and English documents.
+LocalInsightEngine v0.1.0 - Multi-format test (RECOMMENDED)
 """
 
 import sys

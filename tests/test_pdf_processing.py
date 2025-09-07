@@ -1,5 +1,6 @@
 """
 Test script for PDF processing functionality.
+LocalInsightEngine v0.1.0 - Legacy PDF-only test
 """
 
 import sys
@@ -26,15 +27,13 @@ def test_pdf_processing():
     try:
         # Path to test PDF
         pdf_path = project_root / "german_sample.pdf"
-    
-    if not pdf_path.exists():
-        print(f"ERROR: Test PDF not found: {pdf_path}")
-        return
-    
-    print(f"[PDF] Testing PDF processing with: {pdf_path.name}")
-    print("=" * 60)
-    
-    try:
+        
+        if not pdf_path.exists():
+            print(f"ERROR: Test PDF not found: {pdf_path}")
+            return
+        
+        print(f"[PDF] Testing PDF processing with: {pdf_path.name}")
+        print("=" * 60)
         # Initialize components
         print("[INIT] Initializing components...")
         settings = Settings()
