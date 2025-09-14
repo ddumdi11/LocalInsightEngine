@@ -56,18 +56,21 @@
 
 ## 📊 **DATENMODELL 2.0**
 
-### **🎪 Enhanced Session Model**
-```python
 class PersistentQASession:
     # Core Session Data
     session_id: UUID
-    document_path: Path
-    document_hash: str                    # Detect document changes
-    document_name: str                    # User-friendly display
+    document_path_hash: str              # SHA-256 of canonical path
+    document_hash: str                   # Content hash
+    document_display_name: str           # Optional, sanitized
+    source_id: Optional[str]             # Opaque ref instead of path
 
     # Analysis Data
     analysis_result: AnalysisResult
-    neutralized_context: str              # Copyright-safe content
+    neutralized_context: str             # Copyright-safe content
+    neutralization_version: str          # e.g., "v0.1.1"
+    policy_id: str                       # Policy/build that did neutralization
+    retention_days: int                  # Data retention policy
+    consent_basis: Optional[str]         # GDPR/CCPA basis
 
     # Conversation History
     conversation_history: List[QAExchange]
@@ -77,14 +80,13 @@ class PersistentQASession:
     created_at: datetime
     last_accessed: datetime
     total_questions: int
-    session_tags: List[str]               # User-defined tags
+    session_tags: List[str]              # User-defined tags
     is_favorite: bool
 
     # Smart Features
-    related_sessions: List[UUID]          # Cross-document connections
-    auto_generated_summary: str           # AI-generated session summary
-    key_insights_extracted: List[str]     # Most important findings
-```
+    related_sessions: List[UUID]         # Cross-document connections
+    auto_generated_summary: str          # AI-generated session summary
+    key_insights_extracted: List[str]    # Most important findings
 
 ### **💬 Enhanced Q&A Exchange**
 ```python
