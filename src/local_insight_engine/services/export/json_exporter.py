@@ -79,7 +79,7 @@ class JsonExporter:
             "export_metadata": {
                 "export_timestamp": export_timestamp,
                 "export_version": "1.0",
-                "localinsightengine_version": "0.1.0",
+                "localinsightengine_version": "0.1.1",
                 "format": "json"
             },
             

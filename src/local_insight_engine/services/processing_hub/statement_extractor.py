@@ -273,29 +273,51 @@ class StatementExtractor:
         return similarity < 0.7  # At least 30% different
     
     def _create_abstract_version(self, statement: str, language: str) -> str:
-        """Create a highly abstract version of the statement."""
-        words = statement.lower().split()
-        
-        # Language-specific stop words
+        """Create a highly abstract version of the statement with NO original content."""
+        # CRITICAL: This method must NEVER include any original words or phrases
+        # to ensure copyright compliance and prevent canary phrases from leaking through
+
+        # Analyze statement characteristics without using original words
+        has_numbers = bool(re.search(r'\d+(?:[.,]\d+)?%?', statement))
+        has_research_indicators = False
+        has_technical_content = False
+
+        statement_lower = statement.lower()
+
+        # Language-specific abstract fallbacks - NO ORIGINAL CONTENT
         if language == 'german':
-            stop_words = {'der', 'die', 'das', 'und', 'dass', 'mit', 'von', 'auf', 'für', 'sich', 'haben', 'waren'}
-            template = "Der Inhalt behandelt Konzepte im Zusammenhang mit {} und {}."
-            single_template = "Der Inhalt befasst sich mit dem Thema {}."
-            fallback = "Der Inhalt enthält sachliche Informationen."
+            research_keywords = {'studie', 'forschung', 'daten', 'analyse', 'untersuchung', 'befund'}
+            technical_keywords = {'system', 'methode', 'verfahren', 'prozess', 'technologie', 'algorithmus'}
+
+            has_research_indicators = any(keyword in statement_lower for keyword in research_keywords)
+            has_technical_content = any(keyword in statement_lower for keyword in technical_keywords)
+
+            # Abstract templates with NO original content
+            if has_numbers and has_research_indicators:
+                return "Der Inhalt enthält quantitative Forschungsergebnisse."
+            elif has_research_indicators:
+                return "Der Inhalt beschreibt wissenschaftliche Erkenntnisse."
+            elif has_technical_content:
+                return "Der Inhalt behandelt technische Aspekte."
+            elif has_numbers:
+                return "Der Inhalt enthält numerische Informationen."
+            else:
+                return "Der Inhalt vermittelt sachliche Informationen."
         else:
-            stop_words = {'the', 'and', 'that', 'this', 'with', 'from', 'they', 'have', 'were', 'been'}
-            template = "Content discusses concepts related to {} and {}."
-            single_template = "Content addresses the topic of {}."
-            fallback = "Content contains factual information."
-        
-        content_words = [
-            word for word in words 
-            if len(word) > 3 and word not in stop_words
-        ]
-        
-        if len(content_words) >= 2:
-            return template.format(content_words[0], content_words[1])
-        elif len(content_words) == 1:
-            return single_template.format(content_words[0])
-        else:
-            return fallback
+            research_keywords = {'study', 'research', 'data', 'analysis', 'investigation', 'findings'}
+            technical_keywords = {'system', 'method', 'process', 'technology', 'algorithm', 'technique'}
+
+            has_research_indicators = any(keyword in statement_lower for keyword in research_keywords)
+            has_technical_content = any(keyword in statement_lower for keyword in technical_keywords)
+
+            # Abstract templates with NO original content
+            if has_numbers and has_research_indicators:
+                return "Content contains quantitative research findings."
+            elif has_research_indicators:
+                return "Content describes scientific insights."
+            elif has_technical_content:
+                return "Content addresses technical aspects."
+            elif has_numbers:
+                return "Content contains numerical information."
+            else:
+                return "Content conveys factual information."

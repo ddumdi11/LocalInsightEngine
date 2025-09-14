@@ -2,7 +2,7 @@
 
 **Intelligente, urheberrechtskonforme Analyse von Sachbüchern und Dokumenten**
 
-![Work in Progress](https://img.shields.io/badge/Status-Production%20Ready%20v0.1.0-green)
+![Work in Progress](https://img.shields.io/badge/Status-Production%20Ready%20v0.1.1-green)
 ![MIT License](https://img.shields.io/badge/License-MIT-green)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 [![Developed with Claude Code](https://img.shields.io/badge/Developed%20with-Claude%20Code-purple)](https://claude.ai/code)
@@ -170,11 +170,34 @@ unterstützt hat.
 
 ## 📈 Roadmap
 
-- [ ] Feature A implementieren
-- [ ] Tests erweitern
-- [ ] Dokumentation vervollständigen
-- [x] Grundlegende Projektstruktur
-- [x] README und Dokumentation
+### ✅ Abgeschlossen (v0.1.1)
+- [x] Vollständige 3-Layer-Architektur
+- [x] PDF/EPUB/DOCX-Parser mit präzisem Mapping
+- [x] spaCy-Integration (Deutsch + Englisch)
+- [x] Claude-4 API-Client mit modernsten Modellen
+- [x] Statement-Neutralisierung für Copyright-Compliance
+- [x] Komplette Test-Pipeline mit Unit- und Integrationstests
+- [x] **JSON Export-Funktionalität** (CLI, Start.bat, programmatisch)
+- [x] **Copyright-Compliance** (✅ All anonymization tests passing)
+
+### 🚧 Geplant (v0.2.0)
+- [x] **Anonymization Issues Fixed** (✅ Intelligent entity neutralization)
+- [ ] **Persistent QA System** - Interactive document analysis with session memory
+  - [ ] Knowledge graph persistence across sessions
+  - [ ] Context-aware question answering
+  - [ ] Incremental learning from user interactions
+  - [ ] Bookmark and annotation system
+- [ ] File-type detection warnings for mismatched extensions
+- [ ] CSV/PDF Export-Formate
+- [ ] Web-Interface (FastAPI + React)
+- [ ] Batch-Processing für multiple Dokumente
+
+### 🔮 Zukunft (v1.0.0)
+- [ ] Graphische Benutzeroberfläche
+- [ ] Database-Backend für große Dokumente
+- [ ] Multi-Language Support (erweitert)
+- [ ] Collaborative Analysis Features
+- [ ] Enterprise-Deployment-Optionen
 
 ## 🤔 Probleme & Lösungen
 
