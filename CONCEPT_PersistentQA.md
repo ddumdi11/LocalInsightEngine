@@ -375,13 +375,17 @@ class PrivacyControls:
     def anonymize_session(self, session_id: UUID):
         # 🎭 Remove personal information from Q&As
         # 🔒 Encrypt sensitive data
-        # 🗑️ Support for "right to be forgotten"
+        # 🗑️ Right to be forgotten:
+        # 1) DELETE FROM qa_exchanges WHERE session_id=?
+        # 2) DELETE FROM sessions WHERE session_id=?
+        # 3) Purge qa_search entries (triggers handle, else manual)
+        # 4) EXECUTE: PRAGMA wal_checkpoint(TRUNCATE); VACUUM;
+        # 5) Verify no residuals via compliance audit
 
     def export_user_data(self) -> UserDataExport:
         # 📦 GDPR-compliant data export
         # 🔍 Full transparency over stored data
         # 🗂️ Machine-readable format
-```
 
 ---
 
