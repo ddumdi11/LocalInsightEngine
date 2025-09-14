@@ -355,23 +355,19 @@ class HistoryAwareContextOptimizer:
 
 ---
 
-## 🛡️ **ENHANCED COPYRIGHT COMPLIANCE**
-
-### **Persistence Audit Trail**
-```python
 class ComplianceManager:
     def audit_session_storage(self, session_id: UUID):
-        # ✅ Verify only neutralized content is stored
+        # ✅ Verify only neutralized content is stored (sample rows + regex checks)
         # ✅ No original text in database
-        # ✅ All Q&As use processed content only
+        # ✅ All Q&As use processed content only (answer_origin != "raw")
         # ✅ Export logs for compliance review
+        # ✅ Validate FTS index parity and deletions (GDPR)
 
     def generate_compliance_report(self) -> ComplianceReport:
-        # 📋 Full audit of all stored sessions
+        # 📋 Full audit + pipeline version, policy_id, neutralization_version
         # 🔍 Detection of any potential violations
         # 📊 Statistics on content neutralization
         # ✅ Certification of copyright compliance
-```
 
 ### **Data Privacy Features**
 ```python
