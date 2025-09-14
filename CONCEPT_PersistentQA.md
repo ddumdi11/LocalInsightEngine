@@ -140,25 +140,49 @@ class SessionMetadata:
 
 ## 🔍 **INTELLIGENT SEARCH SYSTEM**
 
-### **Multi-Dimensional Search**
+### **Unified SQLite FTS5 Search Architecture**
 ```python
 class SmartSearchEngine:
-    def search_qa_history(self, query: str) -> List[SearchResult]:
-        # 🔍 Full-text search through all Q&As
-        # 🧠 Semantic similarity matching
-        # 🎯 Relevance scoring with ML
-        # ⚡ Sub-second response times
+    """
+    Single-source-of-truth search using SQLite FTS5 with BM25 + time-decay ranking.
+    No separate in-memory SearchIndex to prevent index drift and duplication.
+    """
+
+    def __init__(self, db_connection: sqlite3.Connection):
+        self.db = db_connection
+        self.fts5_table = "qa_search_fts"  # Only neutralized content indexed
+        self._setup_fts5_ranking_view()
+
+    def search_qa_history(self, query: str, time_decay: float = 0.1) -> List[SearchResult]:
+        # 🔍 SQLite FTS5 full-text search with BM25 ranking
+        # ⏱️ Configurable time-decay scoring (recent = higher score)
+        # 🛡️ Only searches neutralized/sanitized content
+        # 🚀 Single database query, no memory overhead
 
     def find_similar_questions(self, question: str) -> List[QAExchange]:
-        # 🤖 AI-powered question similarity
-        # 📊 Context-aware matching
-        # 🔗 Cross-document connections
+        # 🤖 FTS5 MATCH query with semantic keywords
+        # 📊 BM25 relevance scoring
+        # 🔗 Cross-document connections via FTS5 joins
 
     def discover_related_insights(self, session_id: UUID) -> List[Insight]:
-        # 🕸️ Graph-based knowledge discovery
-        # 🧩 Pattern recognition across sessions
-        # 💡 Suggest follow-up questions
+        # 🕸️ FTS5 content analysis with ranking views
+        # 🧩 Pattern recognition through SQL aggregations
+        # 💡 Suggest follow-up questions from similar content
+
+    def _setup_fts5_ranking_view(self):
+        # Creates persistent ranking view combining:
+        # - BM25 relevance score from FTS5
+        # - Time-decay factor (configurable)
+        # - Ensures only neutralized content is searchable
+        # - Provides single rebuild/refresh procedure to prevent drift
 ```
+
+**Key Architecture Benefits:**
+- ✅ **Single Source of Truth**: Only SQLite FTS5, no duplicate in-memory index
+- ✅ **No Index Drift**: One canonical search index prevents synchronization issues
+- ✅ **Copyright Compliance**: Strict pipeline ensures only neutralized content is indexed
+- ✅ **Performance**: BM25 + time-decay ranking with sub-second response times
+- ✅ **Consistency**: Single rebuild/refresh procedure, no complex synchronization
 
 ### **Search Interface**
 ```
