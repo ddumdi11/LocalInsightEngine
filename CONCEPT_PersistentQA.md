@@ -182,40 +182,67 @@ class SmartSearchEngine:
 ## 💾 **PERSISTENCE STRATEGY**
 
 ### **Local SQLite Database**
-```sql
 -- Sessions Table
 CREATE TABLE sessions (
     session_id TEXT PRIMARY KEY,
-    document_path TEXT NOT NULL,
-    document_hash TEXT,
-    document_name TEXT,
-    created_at TIMESTAMP,
-    last_accessed TIMESTAMP,
-    is_favorite BOOLEAN DEFAULT FALSE,
-    session_tags TEXT, -- JSON array
+    document_path_hash TEXT NOT NULL,
+    document_hash TEXT NOT NULL,
+    document_display_name TEXT,
+    created_at TEXT NOT NULL,            -- ISO-8601 UTC
+    last_accessed TEXT NOT NULL,         -- ISO-8601 UTC
+    is_favorite INTEGER NOT NULL DEFAULT 0 CHECK(is_favorite IN (0,1)),
+    session_tags TEXT NOT NULL,          -- JSON array
     neutralized_context TEXT,
-    analysis_result_json TEXT -- Full AnalysisResult
+    analysis_result_json TEXT NOT NULL,  -- Full AnalysisResult
+    neutralization_version TEXT NOT NULL,
+    policy_id TEXT NOT NULL,
+    retention_days INTEGER NOT NULL CHECK(retention_days >= 0),
+    consent_basis TEXT
 );
 
 -- Q&A Exchanges Table
 CREATE TABLE qa_exchanges (
     exchange_id TEXT PRIMARY KEY,
-    session_id TEXT REFERENCES sessions(session_id),
+    session_id TEXT NOT NULL REFERENCES sessions(session_id) ON DELETE CASCADE,
     question TEXT NOT NULL,
     answer TEXT NOT NULL,
-    timestamp TIMESTAMP,
-    user_rating INTEGER,
-    is_bookmarked BOOLEAN DEFAULT FALSE,
+    timestamp TEXT NOT NULL,             -- ISO-8601 UTC
+    user_rating INTEGER CHECK(user_rating BETWEEN 1 AND 5),
+    is_bookmarked INTEGER NOT NULL DEFAULT 0 CHECK(is_bookmarked IN (0,1)),
     context_used TEXT,
-    tokens_used INTEGER
+    tokens_used INTEGER NOT NULL CHECK(tokens_used >= 0),
+    confidence_score REAL CHECK(confidence_score BETWEEN 0 AND 1),
+    answer_quality TEXT,
+    answer_origin TEXT,
+    safety_flags TEXT,                   -- JSON array
+    checksum TEXT
 );
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_exchanges_session_ts ON qa_exchanges(session_id, timestamp);
+CREATE INDEX IF NOT EXISTS idx_sessions_last_accessed ON sessions(last_accessed);
 
 -- Full-Text Search Index
 CREATE VIRTUAL TABLE qa_search USING fts5(
     question, answer, context_used,
     content='qa_exchanges'
 );
-```
+
+-- Keep FTS in sync
+CREATE TRIGGER IF NOT EXISTS qa_exchanges_ai AFTER INSERT ON qa_exchanges BEGIN
+  INSERT INTO qa_search(rowid, question, answer, context_used)
+  VALUES (new.rowid, new.question, new.answer, new.context_used);
+END;
+CREATE TRIGGER IF NOT EXISTS qa_exchanges_ad AFTER DELETE ON qa_exchanges BEGIN
+  INSERT INTO qa_search(qa_search, rowid, question, answer, context_used)
+  VALUES('delete', old.rowid, old.question, old.answer, old.context_used);
+END;
+CREATE TRIGGER IF NOT EXISTS qa_exchanges_au AFTER UPDATE ON qa_exchanges BEGIN
+  INSERT INTO qa_search(qa_search, rowid, question, answer, context_used)
+  VALUES('delete', old.rowid, old.question, old.answer, old.context_used);
+  INSERT INTO qa_search(rowid, question, answer, context_used)
+  VALUES (new.rowid, new.question, new.answer, new.context_used);
+END;
 
 ### **Smart Caching Strategy**
 ```python
