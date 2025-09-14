@@ -1,5 +1,5 @@
 @echo off
-rem LocalInsightEngine v0.1.0 - Start Script
+rem LocalInsightEngine v0.1.1 - Start Script
 rem Copyright-compliant document analysis with 3-layer architecture
 rem
 rem Usage:
@@ -32,7 +32,7 @@ call .venv\Scripts\activate.bat
 
 rem Handle special commands
 if "%1"=="--version" (
-    echo LocalInsightEngine v0.1.0
+    echo LocalInsightEngine v0.1.1
     echo Copyright-compliant document analysis
     python -m local_insight_engine.main --version
     goto end
@@ -64,7 +64,7 @@ if not exist "%1" (
 )
 
 rem Run analysis with all parameters
-echo [START] LocalInsightEngine v0.1.0
+echo [START] LocalInsightEngine v0.1.1
 echo [INFO] Analyzing document: %1
 
 rem Check if export parameters are present
@@ -93,7 +93,7 @@ echo [SUCCESS] Analysis completed!
 goto end
 
 :help
-echo LocalInsightEngine v0.1.0 - Copyright-compliant document analysis
+echo LocalInsightEngine v0.1.1 - Copyright-compliant document analysis
 echo.
 echo Usage:
 echo   Start.bat document.pdf                           Analyze a document

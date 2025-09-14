@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     
     # General settings
     app_name: str = "LocalInsightEngine"
-    app_version: str = "0.1.0"
+    app_version: str = "0.1.1"
     debug: bool = Field(default=False, env="DEBUG")
     
     # File processing settings

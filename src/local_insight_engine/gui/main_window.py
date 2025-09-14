@@ -16,12 +16,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 from local_insight_engine.main import LocalInsightEngine
 from local_insight_engine.models.analysis import AnalysisResult
+from local_insight_engine import __version__
 
 
 class LocalInsightEngineGUI:
     def __init__(self):
         self.root = tk.Tk()
-        self.root.title("LocalInsightEngine v0.1.0 - GUI")
+        self.root.title(f"LocalInsightEngine {__version__} - GUI")
         self.root.geometry("900x700")
 
         self.engine = LocalInsightEngine()
@@ -217,7 +218,8 @@ class LocalInsightEngineGUI:
             self.analysis_result = self.engine.analyze_document(self.current_document)
             self.root.after(0, self._analysis_complete)
         except Exception as e:
-            self.root.after(0, lambda: self._analysis_error(str(e)))
+            error_msg = str(e)
+            self.root.after(0, lambda msg=error_msg: self._analysis_error(msg))
 
     def _analysis_complete(self):
         """Handle successful analysis completion"""
@@ -265,7 +267,8 @@ class LocalInsightEngineGUI:
                 self.root.after(0, lambda: self._analysis_error(result.stderr or "Unknown error"))
 
         except Exception as e:
-            self.root.after(0, lambda: self._analysis_error(str(e)))
+            error_msg = str(e)
+            self.root.after(0, lambda msg=error_msg: self._analysis_error(msg))
 
     def ask_question(self):
         """Ask question about the analyzed document"""
@@ -367,7 +370,8 @@ class LocalInsightEngineGUI:
             self.root.after(0, lambda: self._question_answered(answer))
 
         except Exception as e:
-            self.root.after(0, lambda: self._question_error(str(e)))
+            error_msg = str(e)
+            self.root.after(0, lambda msg=error_msg: self._question_error(msg))
 
     def _question_answered(self, answer: str):
         """Handle successful question answering"""
@@ -411,11 +415,12 @@ class LocalInsightEngineGUI:
                 self.root.after(0, lambda: self.log_message(f"✗ Tests failed: {result.stderr}"))
 
         except Exception as e:
-            self.root.after(0, lambda: self.log_message(f"✗ Test error: {str(e)}"))
+            error_msg = str(e)
+            self.root.after(0, lambda msg=error_msg: self.log_message(f"✗ Test error: {msg}"))
 
     def show_version(self):
         """Show version information"""
-        version_info = """LocalInsightEngine v0.1.0
+        version_info = f"""LocalInsightEngine {__version__}
 
 Copyright-compliant document analysis with 3-layer architecture:
 • Layer 1: Document parsing (PDF, TXT, EPUB, DOCX)

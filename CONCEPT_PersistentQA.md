@@ -59,7 +59,8 @@
 class PersistentQASession:
     # Core Session Data
     session_id: UUID
-    document_path_hash: str              # SHA-256 of canonical path
+    document_path_hash: str              # HMAC-SHA256(secret_pepper, canonical_path)
+    pepper_id: str                       # Reference to KMS-managed pepper (rotation support)
     document_hash: str                   # Content hash
     document_display_name: str           # Optional, sanitized
     source_id: Optional[str]             # Opaque ref instead of path
@@ -209,7 +210,8 @@ class SmartSearchEngine:
 -- Sessions Table
 CREATE TABLE sessions (
     session_id TEXT PRIMARY KEY,
-    document_path_hash TEXT NOT NULL,
+    document_path_hash TEXT NOT NULL,        -- HMAC-SHA256(secret_pepper, canonical_path)
+    pepper_id TEXT NOT NULL,                 -- KMS pepper reference for rotation support
     document_hash TEXT NOT NULL,
     document_display_name TEXT,
     created_at TEXT NOT NULL,            -- ISO-8601 UTC
@@ -229,6 +231,7 @@ CREATE TABLE sessions (
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_sessions_dochash ON sessions(document_hash);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_sessions_pepper_id ON sessions(pepper_id);  -- Support pepper rotation queries
 
 -- Q&A Exchanges Table
 CREATE TABLE qa_exchanges (
@@ -416,6 +419,31 @@ class PrivacyControls:
         # 📦 GDPR-compliant data export
         # 🔍 Full transparency over stored data
         # 🗂️ Machine-readable format
+
+class SecurePepperManager:
+    """🔐 SECURITY: HMAC-SHA256 Path Hashing with Pepper Management"""
+
+    def generate_document_path_hash(self, canonical_path: str, pepper_id: str) -> str:
+        # 🛡️ SECURITY: HMAC-SHA256(secret_pepper, canonical_path)
+        # ✅ Prevents path-guessing attacks vs plain SHA-256
+        # 🔄 Supports pepper rotation via pepper_id
+        secret_pepper = self.get_pepper_by_id(pepper_id)  # From KMS
+        return hmac.new(secret_pepper, canonical_path.encode(), hashlib.sha256).hexdigest()
+
+    def get_pepper_by_id(self, pepper_id: str) -> bytes:
+        # 🔑 KMS Integration: Retrieve pepper by ID
+        # 🚫 NEVER persist raw pepper values in database
+        # 🔄 Support multiple pepper versions for rotation
+        pass
+
+    def rotate_pepper(self, old_pepper_id: str, new_pepper_id: str):
+        # 🔄 Pepper Rotation Strategy:
+        # 1) Generate new pepper in KMS
+        # 2) Re-hash all document_path_hash with new pepper
+        # 3) Update pepper_id references
+        # 4) Mark old pepper for deprecation (not immediate deletion)
+        # 5) Background process to verify migration completeness
+        pass
 
 ---
 
