@@ -1,5 +1,5 @@
 @echo off
-rem LocalInsightEngine v0.1.0 - GUI Launcher
+rem LocalInsightEngine v0.1.1 - GUI Launcher
 rem Copyright-compliant document analysis with Q&A functionality
 rem
 rem This script launches the graphical user interface for LocalInsightEngine
@@ -7,7 +7,10 @@ rem Features: File selection, analysis actions, interactive Q&A, export function
 
 setlocal enabledelayedexpansion
 
-echo [GUI] LocalInsightEngine v0.1.0 - Starting GUI Application...
+rem Change to script directory to ensure relative paths work regardless of invocation location
+pushd "%~dp0"
+
+echo [GUI] LocalInsightEngine v0.1.1 - Starting GUI Application...
 
 rem Check if virtual environment exists
 if not exist ".venv\Scripts\activate.bat" (
@@ -39,8 +42,8 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-rem Set PYTHONPATH to include src directory
-set PYTHONPATH=%CD%\src;%PYTHONPATH%
+rem Set PYTHONPATH to include src directory (now relative to script directory)
+set PYTHONPATH=%~dp0src;%PYTHONPATH%
 
 echo [START] Launching LocalInsightEngine GUI...
 echo [INFO] Features available:
@@ -62,4 +65,8 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo [SUCCESS] GUI application closed successfully!
+
+rem Restore original directory
+popd
+
 pause
