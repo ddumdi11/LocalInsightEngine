@@ -12,6 +12,7 @@ from typing import Dict, Any, Optional
 from ...models.analysis import AnalysisResult, Insight, Question
 from ...models.text_data import ProcessedText
 from ...models.document import Document
+from ... import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ class JsonExporter:
             "export_metadata": {
                 "export_timestamp": export_timestamp,
                 "export_version": "1.0",
-                "localinsightengine_version": "0.1.1",
+                "localinsightengine_version": __version__,
                 "format": "json"
             },
             

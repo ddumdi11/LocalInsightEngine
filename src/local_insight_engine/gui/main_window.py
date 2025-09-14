@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import threading
 import sys
+import subprocess
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -250,10 +251,9 @@ class LocalInsightEngineGUI:
     def _analyze_and_export_bg(self, export_path: str):
         """Background thread for analyze and export"""
         try:
-            # Run CLI command with export
-            import subprocess
+            # Run CLI command with export (using same Python interpreter)
             result = subprocess.run([
-                "python", "-m", "local_insight_engine.main",
+                sys.executable, "-m", "local_insight_engine.main",
                 str(self.current_document),
                 "--export",
                 "--output", str(Path(export_path).parent)
@@ -401,9 +401,8 @@ class LocalInsightEngineGUI:
     def _run_tests_bg(self):
         """Background thread for running tests"""
         try:
-            import subprocess
             result = subprocess.run([
-                "python", "tests/test_multiformat.py"
+                sys.executable, "tests/test_multiformat.py"
             ], capture_output=True, text=True, cwd=Path(__file__).parent.parent.parent.parent)
 
             if result.returncode == 0:
