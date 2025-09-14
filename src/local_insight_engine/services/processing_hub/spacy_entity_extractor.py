@@ -220,18 +220,22 @@ class SpacyEntityExtractor:
             Neutralized text or original if it appears to be legitimate
         """
         # Patterns that indicate test/canary/debug identifiers
+        # pattern, flags
         suspicious_patterns = [
-            r'^.*_(CANARY|TEST|MARKER|DEBUG)_.*$',  # *_CANARY_*, *_TEST_*, etc.
-            r'^(CANARY|TEST|MARKER|DEBUG)_.*$',     # CANARY_*, TEST_*, etc.
-            r'^.*_(CANARY|TEST|MARKER|DEBUG)$',     # *_CANARY, *_TEST, etc.
-            r'^[A-Z_]{15,}$',                       # Very long all-caps with underscores (15+ chars)
-            r'^[A-Z]+_[A-Z]+_[A-Z]+_[0-9]+$',       # CAPS_CAPS_CAPS_123 pattern
-            r'^[A-Z]+_[A-Z]+_[0-9]{6,}$',           # CAPS_CAPS_123456789 pattern
+            (r'^.*_(CANARY|TEST|MARKER|DEBUG)_.*$', re.IGNORECASE),
+            (r'^(CANARY|TEST|MARKER|DEBUG)_.*$', re.IGNORECASE),
+            (r'^.*_(CANARY|TEST|MARKER|DEBUG)$', re.IGNORECASE),
+            # Strict ALL-CAPS/underscore run; case-sensitive on purpose
+            (r'^[A-Z_]{15,}$', 0),
+            (r'^[A-Z]+_[A-Z]+_[A-Z]+_[0-9]+$', re.IGNORECASE),
+            (r'^[A-Z]+_[A-Z]+_[0-9]{6,}$', re.IGNORECASE),
+            # Optional: long opaque alphanumeric runs (reduce false positives with higher threshold)
+            (r'^[A-Za-z0-9]{24,}$', re.IGNORECASE),
         ]
 
         # Check if entity matches suspicious patterns
-        for pattern in suspicious_patterns:
-            if re.match(pattern, entity_text, re.IGNORECASE):
+        for pattern, flags in suspicious_patterns:
+            if re.match(pattern, entity_text, flags):
                 # Generate neutral replacement based on entity characteristics
                 if 'CANARY' in entity_text.upper():
                     return "Test-Identifikator"
