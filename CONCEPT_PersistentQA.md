@@ -191,14 +191,20 @@ CREATE TABLE sessions (
     created_at TEXT NOT NULL,            -- ISO-8601 UTC
     last_accessed TEXT NOT NULL,         -- ISO-8601 UTC
     is_favorite INTEGER NOT NULL DEFAULT 0 CHECK(is_favorite IN (0,1)),
-    session_tags TEXT NOT NULL,          -- JSON array
+    session_tags TEXT NOT NULL CHECK(json_valid(session_tags)), -- JSON array
     neutralized_context TEXT,
     analysis_result_json TEXT NOT NULL,  -- Full AnalysisResult
     neutralization_version TEXT NOT NULL,
     policy_id TEXT NOT NULL,
     retention_days INTEGER NOT NULL CHECK(retention_days >= 0),
-    consent_basis TEXT
+    consent_basis TEXT CHECK(consent_basis IN ('consent','contract','legal_obligation','vital_interests','public_task','legitimate_interests')),
+    expires_at TEXT GENERATED ALWAYS AS (
+      datetime(created_at, printf('+%d days', retention_days))
+    ) VIRTUAL
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_sessions_dochash ON sessions(document_hash);
+CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
 -- Q&A Exchanges Table
 CREATE TABLE qa_exchanges (
