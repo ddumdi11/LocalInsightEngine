@@ -97,24 +97,26 @@ class QAExchange:
 
     # Context & Intelligence
     context_used: str                     # What context was sent to Claude
-    confidence_score: float              # AI confidence in answer
-    answer_quality: str                  # "excellent", "good", "partial"
+    confidence_score: float              # 0..1
+    answer_quality: Literal["excellent","good","partial","low"]
 
     # User Interaction
-    user_rating: Optional[int]           # 1-5 stars
+    user_rating: Optional[int]           # 1..5
     user_notes: str                      # Personal annotations
     is_bookmarked: bool
 
     # Meta Information
     timestamp: datetime
     processing_time: float
-    tokens_used: int
+    tokens_used: int                     # >=0
     claude_model: str
+    answer_origin: Literal["neutralized","synthesized"]
+    safety_flags: List[str]              # e.g., PII_SUSPECT, COPYRIGHT_RISK
+    checksum: str                        # hash(answer)
 
     # Relations
     related_exchanges: List[UUID]        # Follow-up questions
     document_references: List[str]       # Which parts were relevant
-```
 
 ### **🏷️ Smart Tagging & Organization**
 ```python
