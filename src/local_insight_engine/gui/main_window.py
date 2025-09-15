@@ -384,13 +384,19 @@ class LocalInsightEngineGUI:
             # Try different ways to extract the answer
             answer = None
             if isinstance(result, dict):
-                # Try various possible keys
-                answer = (result.get('summary') or
+                # Try engine-specific keys first
+                answer = (result.get('executive_summary') or
+                         result.get('insights') or
+                         # Then try generic fallback keys
+                         result.get('summary') or
                          result.get('answer') or
                          result.get('response') or
                          result.get('content') or
-                         result.get('text') or
-                         str(result))
+                         result.get('text'))
+
+                # Final fallback to string representation
+                if not answer:
+                    answer = str(result)
             else:
                 answer = str(result)
 
