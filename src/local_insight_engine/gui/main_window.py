@@ -8,6 +8,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 import threading
 import sys
 import subprocess
+import logging
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -17,6 +18,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from local_insight_engine.main import LocalInsightEngine
 from local_insight_engine.models.analysis import AnalysisResult
 from local_insight_engine import __version__
+
+logger = logging.getLogger(__name__)
 
 
 class LocalInsightEngineGUI:
@@ -215,7 +218,17 @@ class LocalInsightEngineGUI:
     def _analyze_document_bg(self):
         """Background thread for document analysis"""
         try:
-            self.analysis_result = self.engine.analyze_document(self.current_document)
+            analysis_dict = self.engine.analyze_document(self.current_document)
+            # Convert dict to AnalysisResult object with robust error handling
+            if isinstance(analysis_dict, dict):
+                try:
+                    self.analysis_result = AnalysisResult.parse_obj(analysis_dict)
+                except Exception as parse_error:
+                    logger.warning(f"Failed to parse analysis result as AnalysisResult: {parse_error}")
+                    # Fallback: keep as dict for Q&A functionality
+                    self.analysis_result = analysis_dict
+            else:
+                self.analysis_result = analysis_dict
             self.root.after(0, self._analysis_complete)
         except Exception as e:
             error_msg = str(e)
@@ -300,17 +313,34 @@ class LocalInsightEngineGUI:
 
             analyzer = ClaudeClient()
 
-            # Get neutralized content from analysis result
+            # Get neutralized content from analysis result (works with both AnalysisResult objects and dicts)
             neutralized_content = ""
             if self.analysis_result:
-                # Try to get content from various possible attributes
-                if hasattr(self.analysis_result, 'executive_summary') and self.analysis_result.executive_summary:
-                    neutralized_content = self.analysis_result.executive_summary
-                elif hasattr(self.analysis_result, 'main_themes') and self.analysis_result.main_themes:
-                    neutralized_content = "Main themes: " + ", ".join(self.analysis_result.main_themes)
-                elif hasattr(self.analysis_result, 'insights') and self.analysis_result.insights:
-                    neutralized_content = "\n".join([insight.content for insight in self.analysis_result.insights])
-                else:
+                # Handle AnalysisResult object
+                if hasattr(self.analysis_result, 'executive_summary'):
+                    if self.analysis_result.executive_summary:
+                        neutralized_content = self.analysis_result.executive_summary
+                    elif hasattr(self.analysis_result, 'main_themes') and self.analysis_result.main_themes:
+                        neutralized_content = "Main themes: " + ", ".join(self.analysis_result.main_themes)
+                    elif hasattr(self.analysis_result, 'insights') and self.analysis_result.insights:
+                        neutralized_content = "\n".join([insight.content for insight in self.analysis_result.insights])
+                # Handle dict
+                elif isinstance(self.analysis_result, dict):
+                    if 'executive_summary' in self.analysis_result and self.analysis_result['executive_summary']:
+                        neutralized_content = self.analysis_result['executive_summary']
+                    elif 'main_themes' in self.analysis_result and self.analysis_result['main_themes']:
+                        neutralized_content = "Main themes: " + ", ".join(self.analysis_result['main_themes'])
+                    elif 'insights' in self.analysis_result and self.analysis_result['insights']:
+                        insights = self.analysis_result['insights']
+                        if isinstance(insights, list):
+                            neutralized_content = "\n".join([str(insight) for insight in insights])
+                        else:
+                            neutralized_content = str(insights)
+                    else:
+                        # Fallback: use any available content from the dict
+                        neutralized_content = str(self.analysis_result)[:1000]
+
+                if not neutralized_content:
                     neutralized_content = "Analysis result available but no suitable content found for Q&A."
 
             # Create context for the question

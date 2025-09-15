@@ -151,7 +151,7 @@ class SmartSearchEngine:
 
     def __init__(self, db_connection: sqlite3.Connection):
         self.db = db_connection
-        self.fts5_table = "qa_search_fts"  # Only neutralized content indexed
+        self.fts5_table = "qa_search"  # Only neutralized content indexed
         self._setup_fts5_ranking_view()
 
     def search_qa_history(self, query: str, time_decay: float = 0.1) -> List[SearchResult]:
@@ -219,7 +219,7 @@ CREATE TABLE sessions (
     is_favorite INTEGER NOT NULL DEFAULT 0 CHECK(is_favorite IN (0,1)),
     session_tags TEXT NOT NULL CHECK(json_valid(session_tags)), -- JSON array
     neutralized_context TEXT,
-    analysis_result_json TEXT NOT NULL,  -- Full AnalysisResult
+    analysis_result_json TEXT NOT NULL CHECK(json_valid(analysis_result_json)),  -- Full AnalysisResult
     neutralization_version TEXT NOT NULL,
     policy_id TEXT NOT NULL,
     retention_days INTEGER NOT NULL CHECK(retention_days >= 0),
@@ -247,7 +247,7 @@ CREATE TABLE qa_exchanges (
     confidence_score REAL CHECK(confidence_score BETWEEN 0 AND 1),
     answer_quality TEXT,
     answer_origin TEXT,
-    safety_flags TEXT,                   -- JSON array
+    safety_flags TEXT CHECK(safety_flags IS NULL OR json_valid(safety_flags)),                   -- JSON array
     checksum TEXT
 );
 
