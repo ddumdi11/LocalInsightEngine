@@ -24,7 +24,7 @@ class TestSettings(unittest.TestCase):
         """Test that settings have sensible defaults."""
         settings = Settings()
         self.assertEqual(settings.app_name, "LocalInsightEngine")
-        self.assertEqual(settings.app_version, "0.1.0")
+        self.assertEqual(settings.app_version, "0.1.1")
         self.assertEqual(settings.chunk_size, 1000)
         self.assertEqual(settings.chunk_overlap, 200)
         self.assertEqual(settings.spacy_model, "de_core_news_sm")

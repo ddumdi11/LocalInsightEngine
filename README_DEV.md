@@ -240,7 +240,7 @@ MAX_API_REQUESTS=20
 
 ## 📋 Roadmap
 
-### ✅ Abgeschlossen (v0.1.0)
+### ✅ Abgeschlossen (v0.1.1)
 - [x] Vollständige 3-Layer-Architektur
 - [x] PDF/EPUB/DOCX-Parser mit Mapping
 - [x] spaCy-Integration (Deutsch + Englisch)
@@ -249,17 +249,21 @@ MAX_API_REQUESTS=20
 - [x] Komplette Test-Pipeline
 - [x] **JSON Export-Funktionalität** (CLI, Start.bat, programmatisch)
 - [x] **Export Unit-Tests** mit Anonymization Proof Tests
-- [⚠️] Copyright-Compliance (needs review - canary tests failed)
+- [x] **Copyright-Compliance** (✅ All canary tests passing - anonymization working)
 
 ### 🚧 Geplant (v0.2.0)
-- [⚠️] **CRITICAL: Fix Anonymization Issues** (canary phrases in export detected)
+- [x] **Anonymization Issues Fixed** (✅ Intelligent entity neutralization implemented)
+- [ ] **Persistent QA System** - Interactive document analysis with session memory
+  - [ ] Knowledge graph persistence across sessions
+  - [ ] Context-aware question answering
+  - [ ] Incremental learning from user interactions
+  - [ ] Bookmark and annotation system
 - [ ] Add file-type detection warnings for fake PDFs
-- [ ] CSV/PDF Export-Formate  
+- [ ] CSV/PDF Export-Formate
 - [ ] Web-Interface (FastAPI + React)
 - [ ] Batch-Processing für multiple Dokumente
 - [ ] Erweiterte Visualisierungen
 - [ ] Verbessertes Caching
-- [ ] Plugin-System für andere LLMs
 
 ### 🔮 Zukunft (v1.0.0)
 - [ ] Graphische Benutzeroberfläche

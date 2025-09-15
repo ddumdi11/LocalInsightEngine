@@ -6,6 +6,7 @@ Supports German and English text processing.
 import logging
 import re
 from typing import List, Dict
+from .neutralization_utils import is_sufficiently_neutralized, create_abstract_version
 
 logger = logging.getLogger(__name__)
 
@@ -254,48 +255,8 @@ class StatementExtractor:
                 neutralized += '.'
         
         # Final check: make sure it's different enough from original
-        if self._is_sufficiently_neutralized(statement, neutralized):
+        if is_sufficiently_neutralized(statement, neutralized):
             return neutralized
         else:
-            return self._create_abstract_version(statement, language)
+            return create_abstract_version(statement, language)
     
-    def _is_sufficiently_neutralized(self, original: str, neutralized: str) -> bool:
-        """Check if neutralized version is sufficiently different from original."""
-        original_words = set(original.lower().split())
-        neutralized_words = set(neutralized.lower().split())
-        
-        if len(original_words) == 0:
-            return False
-        
-        common_words = original_words.intersection(neutralized_words)
-        similarity = len(common_words) / len(original_words)
-        
-        return similarity < 0.7  # At least 30% different
-    
-    def _create_abstract_version(self, statement: str, language: str) -> str:
-        """Create a highly abstract version of the statement."""
-        words = statement.lower().split()
-        
-        # Language-specific stop words
-        if language == 'german':
-            stop_words = {'der', 'die', 'das', 'und', 'dass', 'mit', 'von', 'auf', 'für', 'sich', 'haben', 'waren'}
-            template = "Der Inhalt behandelt Konzepte im Zusammenhang mit {} und {}."
-            single_template = "Der Inhalt befasst sich mit dem Thema {}."
-            fallback = "Der Inhalt enthält sachliche Informationen."
-        else:
-            stop_words = {'the', 'and', 'that', 'this', 'with', 'from', 'they', 'have', 'were', 'been'}
-            template = "Content discusses concepts related to {} and {}."
-            single_template = "Content addresses the topic of {}."
-            fallback = "Content contains factual information."
-        
-        content_words = [
-            word for word in words 
-            if len(word) > 3 and word not in stop_words
-        ]
-        
-        if len(content_words) >= 2:
-            return template.format(content_words[0], content_words[1])
-        elif len(content_words) == 1:
-            return single_template.format(content_words[0])
-        else:
-            return fallback

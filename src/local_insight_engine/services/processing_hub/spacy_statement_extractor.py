@@ -4,9 +4,11 @@ SpaCy-based statement extractor for better sentence analysis and neutralization.
 
 import logging
 from typing import List, Set
+import re
 import spacy
 from spacy.lang.de import German
 from spacy.lang.en import English
+from .neutralization_utils import is_sufficiently_neutralized, create_abstract_version
 
 logger = logging.getLogger(__name__)
 
@@ -209,4 +211,9 @@ class SpacyStatementExtractor:
             if not neutralized.endswith('.'):
                 neutralized += '.'
         
-        return neutralized
+        # Check if neutralization is sufficient - if not, create abstract version
+        if is_sufficiently_neutralized(statement, neutralized):
+            return neutralized
+        else:
+            return create_abstract_version(statement, language)
+
