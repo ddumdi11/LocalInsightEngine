@@ -95,23 +95,36 @@ Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen."""
     def analyze(self, processed_text: ProcessedText) -> Dict[str, Any]:
         """
         Analyze processed text using Claude API.
-        
+
         Args:
             processed_text: Neutralized text from Layer 2
-            
+
         Returns:
             Analysis results from Claude
         """
         if not self.client:
             logger.warning("Claude client not available, returning mock analysis")
             return self._mock_analysis(processed_text)
-        
+
         start_time = datetime.now()
-        
+
+        # CRITICAL DEBUG: Log what we receive from Layer 2
+        logger.warning(f"=== DEBUGGING PROCESSED TEXT ===")
+        logger.warning(f"ProcessedText chunks count: {len(processed_text.chunks)}")
+        logger.warning(f"ProcessedText total_chunks: {processed_text.total_chunks}")
+        logger.warning(f"ProcessedText all_entities count: {len(processed_text.all_entities)}")
+        logger.warning(f"ProcessedText total_entities: {processed_text.total_entities}")
+        logger.warning(f"ProcessedText key_themes: {processed_text.key_themes}")
+        logger.warning(f"First chunk sample: {processed_text.chunks[0] if processed_text.chunks else 'NO CHUNKS'}")
+        if processed_text.chunks:
+            logger.warning(f"First chunk neutralized_content: {processed_text.chunks[0].neutralized_content[:200] if processed_text.chunks[0].neutralized_content else 'EMPTY NEUTRALIZED_CONTENT'}")
+            logger.warning(f"First chunk key_statements: {processed_text.chunks[0].key_statements}")
+        logger.warning(f"=== END DEBUG ===")
+
         try:
             # Prepare content for Claude
             content = self._prepare_content(processed_text)
-            
+
             # Call Claude API
             response = self.client.messages.create(
                 model=self.settings.llm_model,
@@ -142,30 +155,47 @@ Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen."""
 
     def _prepare_content(self, processed_text: ProcessedText) -> str:
         """Prepare neutralized content for Claude analysis."""
-        
+
         # Sample key statements from chunks
         key_statements = []
+        chunk_contents = []
+
         for chunk in processed_text.chunks[:20]:  # Limit to first 20 chunks
+            # Get key statements if available
             if chunk.key_statements:
                 key_statements.extend(chunk.key_statements[:3])  # Max 3 per chunk
-        
+            # Also get chunk content as fallback
+            if hasattr(chunk, 'neutralized_content') and chunk.neutralized_content:
+                chunk_contents.append(chunk.neutralized_content[:200])  # First 200 chars
+            elif hasattr(chunk, 'content') and chunk.content:
+                chunk_contents.append(chunk.content[:200])  # First 200 chars
+
         # Prepare entity summary
         entity_summary = self._summarize_entities(processed_text.all_entities)
-        
+
         # Entity type statistics
         entity_types = {}
         for entity in processed_text.all_entities:
             entity_types[entity.label] = entity_types.get(entity.label, 0) + 1
-        
+
+        # Combine all available content
+        all_content = []
+        if key_statements:
+            all_content.extend(key_statements[:30])
+        if chunk_contents and not key_statements:
+            all_content.extend(chunk_contents[:15])  # Fallback to chunk content
+
+        # Debug logging
+        logger.debug(f"Content preparation: {len(key_statements)} statements, {len(chunk_contents)} chunks, {len(all_content)} total items")
+        logger.debug(f"Sample content: {all_content[:2] if all_content else 'NO CONTENT'}")
+
         content = self.analysis_prompt.format(
-            content="\n".join(key_statements[:30]),  # Limit total statements
-            entities=entity_summary,
+            content="\n".join(all_content),
             themes=", ".join(processed_text.key_themes),
             chunk_count=processed_text.total_chunks,
-            entity_count=processed_text.total_entities,
-            entity_types=", ".join([f"{k}: {v}" for k, v in entity_types.items()])
+            entity_count=processed_text.total_entities
         )
-        
+
         return content
 
     def _summarize_entities(self, entities: List) -> str:

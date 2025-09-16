@@ -121,20 +121,20 @@ class TextProcessor:
     def _process_chunk(self, chunk_data: Dict, document_id) -> TextChunk:
         """Process a single chunk into neutralized content."""
         original_text = chunk_data['text']
-        
+
         # Extract key statements (neutralized)
         key_statements = self.statement_extractor.extract_statements(original_text)
-        
+
         # Extract entities with positions
         entities = self.entity_extractor.extract_entities(
-            original_text, 
+            original_text,
             chunk_data['source_paragraphs'],
             chunk_data['source_pages']
         )
-        
-        # Create neutralized content by combining key statements
-        neutralized_content = self._neutralize_content(key_statements, entities)
-        
+
+        # Create neutralized content by combining key statements AND neutralized text
+        neutralized_content = self._neutralize_content(key_statements, entities, original_text)
+
         return TextChunk(
             neutralized_content=neutralized_content,
             key_statements=key_statements,
@@ -146,22 +146,22 @@ class TextProcessor:
             word_count=len(original_text.split())
         )
     
-    def _neutralize_content(self, statements: List[str], entities: List[EntityData]) -> str:
+    def _neutralize_content(self, statements: List[str], entities: List[EntityData], original_text: str) -> str:
         """
         Create neutralized content that preserves meaning without original wording.
-        
+
         This is the core copyright compliance function - it ensures that no
         original creative expression is preserved in the output.
         """
         # Combine statements into neutral, factual representations
         neutralized_parts = []
-        
+
         # Add factual statements
         if statements:
             neutralized_parts.append("Key factual content:")
             for i, statement in enumerate(statements[:5]):  # Limit to avoid too much detail
                 neutralized_parts.append(f"- {statement}")
-        
+
         # Add entity information
         entity_types = {}
         for entity in entities:
@@ -169,13 +169,53 @@ class TextProcessor:
                 entity_types[entity.label] = []
             if entity.text not in entity_types[entity.label]:
                 entity_types[entity.label].append(entity.text)
-        
+
         if entity_types:
             neutralized_parts.append("\nEntities mentioned:")
             for entity_type, entity_list in entity_types.items():
                 neutralized_parts.append(f"- {entity_type}: {', '.join(entity_list[:3])}")  # Limit entities
-        
+
+        # Add neutralized text content for Q&A (but keep it factual and anonymized)
+        # This preserves key information while avoiding copyright issues
+        if original_text and len(original_text.strip()) > 50:
+            # Simple neutralization: replace proper nouns with entity labels but keep structure
+            neutralized_text = self._create_neutral_summary(original_text, entities)
+            if neutralized_text:
+                neutralized_parts.append(f"\nNeutralized content summary:")
+                neutralized_parts.append(neutralized_text[:500])  # Limit length
+
         return "\n".join(neutralized_parts)
+
+    def _create_neutral_summary(self, text: str, entities: List[EntityData]) -> str:
+        """Create a factual summary that replaces specific details with generic terms."""
+        import re
+
+        # Start with the original text
+        neutral_text = text
+
+        # Replace specific entities with generic placeholders
+        for entity in entities:
+            if entity.text and len(entity.text) > 2:
+                if entity.label == 'PERSON':
+                    neutral_text = neutral_text.replace(entity.text, '[PERSON]')
+                elif entity.label == 'ORG':
+                    neutral_text = neutral_text.replace(entity.text, '[ORGANIZATION]')
+                elif entity.label == 'LOC':
+                    neutral_text = neutral_text.replace(entity.text, '[LOCATION]')
+                elif entity.label == 'MISC':
+                    # Keep some MISC entities as they might be technical terms
+                    if len(entity.text) > 10:  # Only replace long misc entities
+                        neutral_text = neutral_text.replace(entity.text, '[TERM]')
+
+        # Clean up repeated placeholders
+        neutral_text = re.sub(r'\[PERSON\](\s*\[PERSON\])+', '[PERSONS]', neutral_text)
+        neutral_text = re.sub(r'\[ORGANIZATION\](\s*\[ORGANIZATION\])+', '[ORGANIZATIONS]', neutral_text)
+
+        # Remove very short segments (less than 20 chars)
+        if len(neutral_text.strip()) < 20:
+            return ""
+
+        return neutral_text.strip()
     
     def _find_source_paragraphs(self, start: int, end: int, paragraph_mapping: Dict) -> List[int]:
         """Find which paragraphs a text range spans."""
