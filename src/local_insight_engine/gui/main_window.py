@@ -23,8 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class LocalInsightEngineGUI:
-    def __init__(self):
-        self.root = tk.Tk()
+    def __init__(self, root=None):
+        # Use provided root or create new one
+        self.root = root if root is not None else tk.Tk()
         self.root.title(f"LocalInsightEngine {__version__} - GUI")
         self.root.geometry("900x700")
 

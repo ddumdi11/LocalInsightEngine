@@ -59,11 +59,16 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
     def test_gui_initialization(self):
         """Test GUI window creation and basic setup"""
         try:
-            self.gui = LocalInsightEngineGUI()
+            # Create headless root for CI compatibility
+            root = tk.Tk()
+            root.withdraw()  # Hide window to prevent flicker and enable headless testing
+
+            # Create GUI with withdrawn root
+            self.gui = LocalInsightEngineGUI(root=root)
 
             # Check if main window exists
             if self.gui.root and isinstance(self.gui.root, tk.Tk):
-                self.log_test("GUI Window Creation", True, "Main window created successfully")
+                self.log_test("GUI Window Creation", True, "Main window created successfully (headless)")
             else:
                 self.log_test("GUI Window Creation", False, "Main window not created")
                 return False
@@ -85,9 +90,13 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
 
             return True
 
-        except Exception as e:
-            self.log_test("GUI Initialization", False, f"Exception: {e}")
+        except tk.TclError as e:
+            self.log_test("GUI Initialization", False, f"Tkinter error: {e}")
             return False
+        except Exception as e:
+            # Re-raise non-Tkinter exceptions as they might indicate real problems
+            self.log_test("GUI Initialization", False, f"Unexpected error: {e}")
+            raise
 
     def test_file_selection(self):
         """Test file selection functionality"""
