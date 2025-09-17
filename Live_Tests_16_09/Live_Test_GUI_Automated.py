@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Optional, Any
 from unittest.mock import patch, MagicMock
 
 # Add src to path (robust to working directory)
@@ -22,12 +23,12 @@ from uuid import uuid4
 class GUITestRunner:
     """Automated GUI test runner that simulates user interactions"""
 
-    def __init__(self):
-        self.gui = None
-        self.test_results = []
-        self.test_document = Path("german_sample.txt")
+    def __init__(self) -> None:
+        self.gui: Optional[LocalInsightEngineGUI] = None
+        self.test_results: list[Any] = []
+        self.test_document: Path = Path("german_sample.txt")
 
-    def log_test(self, test_name: str, success: bool, message: str = ""):
+    def log_test(self, test_name: str, success: bool, message: str = "") -> None:
         """Log test result"""
         status = "PASS" if success else "FAIL"
         result = f"[{status}]: {test_name}"
@@ -36,7 +37,7 @@ class GUITestRunner:
         print(result)
         self.test_results.append((test_name, success, message))
 
-    def setup_test_document(self):
+    def setup_test_document(self) -> None:
         """Create a test document if it doesn't exist"""
         if not self.test_document.exists():
             with open(self.test_document, "w", encoding="utf-8") as f:
@@ -56,7 +57,7 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
 """)
             print(f"Test document created: {self.test_document}")
 
-    def test_gui_initialization(self):
+    def test_gui_initialization(self) -> bool:
         """Test GUI window creation and basic setup"""
         try:
             # Create headless root for CI compatibility
@@ -98,7 +99,7 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             self.log_test("GUI Initialization", False, f"Unexpected error: {e}")
             raise
 
-    def test_file_selection(self):
+    def test_file_selection(self) -> bool:
         """Test file selection functionality"""
         try:
             # Simulate file selection
@@ -117,7 +118,7 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             self.log_test("File Selection", False, f"Exception: {e}")
             return False
 
-    def test_document_analysis(self):
+    def test_document_analysis(self) -> bool:
         """Test document analysis functionality"""
         try:
             # Mock the analysis result to avoid actual API calls
@@ -155,7 +156,7 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             self.log_test("Document Analysis", False, f"Exception: {e}")
             return False
 
-    def test_qa_functionality(self):
+    def test_qa_functionality(self) -> bool:
         """Test Q&A functionality"""
         try:
             # Set test question
@@ -187,7 +188,7 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             self.log_test("Q&A Functionality", False, f"Exception: {e}")
             return False
 
-    def test_gui_cleanup(self):
+    def test_gui_cleanup(self) -> bool:
         """Test GUI cleanup and window closing"""
         try:
             if self.gui and self.gui.root:
@@ -202,7 +203,7 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             self.log_test("GUI Cleanup", False, f"Exception: {e}")
             return False
 
-    def run_all_tests(self):
+    def run_all_tests(self) -> None:
         """Run all GUI tests"""
         print("=== AUTOMATED GUI TEST SUITE ===")
         print()
@@ -251,7 +252,7 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
                 pass
 
 
-def main():
+def main() -> None:
     """Entry point for automated GUI tests"""
     # Run tests in a way that doesn't show the actual GUI window
     runner = GUITestRunner()

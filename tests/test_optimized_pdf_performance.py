@@ -67,6 +67,15 @@ def test_optimized_pdf_loader():
         end_time = time.perf_counter()
         processing_time = end_time - start_time
 
+        # Add assertions to prevent regressions
+        assert document is not None, "Document should not be None"
+        assert hasattr(document, 'text_content'), "Document should have text_content attribute"
+        assert len(document.text_content) > 0, "Document text_content should not be empty"
+        assert hasattr(document, 'metadata'), "Document should have metadata attribute"
+        assert document.metadata.page_count > 0, "Document should have at least one page"
+        assert isinstance(document.paragraph_mapping, dict), "Paragraph mapping should be a dict"
+        assert len(document.paragraph_mapping) > 0, "Document should have at least one paragraph"
+
         logger.info(f"✅ Document loaded successfully!")
         logger.info(f"   • Processing time: {processing_time:.2f} seconds")
         logger.info(f"   • File format: {document.metadata.file_format}")
@@ -78,6 +87,14 @@ def test_optimized_pdf_loader():
 
         # Get processing stats
         stats = loader.get_processing_stats()
+
+        # Add assertions for processing stats
+        assert stats is not None, "Processing stats should not be None"
+        assert stats.pages_processed > 0, "Should have processed at least one page"
+        assert stats.paragraphs_processed > 0, "Should have processed at least one paragraph"
+        assert stats.total_chars > 0, "Should have processed at least some characters"
+        assert stats.chunks_created >= 0, "Chunks created should be non-negative"
+
         logger.info(f"📈 Processing Statistics:")
         logger.info(f"   • Pages processed: {stats.pages_processed}")
         logger.info(f"   • Paragraphs processed: {stats.paragraphs_processed:,}")

@@ -12,7 +12,7 @@ import psutil
 import os
 import logging
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Generator
 from dataclasses import dataclass
 from contextlib import contextmanager
 
@@ -43,13 +43,13 @@ class BenchmarkResult:
 class PDFPerformanceBenchmark:
     """Benchmark suite for PDF processing performance."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.results: List[BenchmarkResult] = []
         self.loader = DocumentLoader()
         self.process = psutil.Process(os.getpid())
 
     @contextmanager
-    def memory_monitor(self):
+    def memory_monitor(self) -> Generator[None, None, None]:
         """Context manager to monitor memory usage during execution."""
         gc.collect()  # Clean up before measurement
         memory_before = self.process.memory_info().rss / 1024 / 1024  # MB
@@ -280,14 +280,14 @@ class PDFPerformanceBenchmark:
 
         return "\n".join(report_lines)
 
-    def save_report(self, output_path: Path):
+    def save_report(self, output_path: Path) -> None:
         """Save performance report to file."""
         report = self.generate_performance_report()
         output_path.write_text(report, encoding='utf-8')
         logger.info(f"📊 Performance report saved to: {output_path}")
 
 
-def run_benchmark():
+def run_benchmark() -> "PDFPerformanceBenchmark":
     """Run the PDF performance benchmark."""
     # Change to project root
     project_root = Path(__file__).parent.parent
