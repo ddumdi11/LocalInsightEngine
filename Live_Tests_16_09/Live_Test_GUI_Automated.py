@@ -152,18 +152,11 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             self.gui.question_entry.delete(0, tk.END)
             self.gui.question_entry.insert(0, test_question)
 
-            # Mock the GUI's ClaudeClient to avoid API calls
-            mock_response = {
-                'analysis_text': 'Die wichtigsten Vitamine sind B3, B12, C und D, wie im Dokument erwähnt.',
-                'confidence': 0.85,
-                'completeness': 0.9
-            }
+            # Mock the engine's answer_question method to avoid API calls
+            mock_response = 'Die wichtigsten Vitamine sind B3, B12, C und D, wie im Dokument erwähnt.'
 
-            # Simulate the Q&A process by directly setting answer text
-            with patch('local_insight_engine.services.analysis_engine.claude_client.ClaudeClient') as MockClient:
-                mock_instance = MockClient.return_value
-                mock_instance.analyze.return_value = mock_response
-
+            # Patch the actual answer_question method used by the GUI
+            with patch.object(self.gui.engine, 'answer_question', return_value=mock_response):
                 # Simulate Q&A background process
                 try:
                     self.gui._ask_question_bg(test_question)

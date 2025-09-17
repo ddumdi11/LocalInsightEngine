@@ -78,7 +78,7 @@ The project uses industry-standard tools and follows best practices for scalable
 from local_insight_engine.main import LocalInsightEngine
 engine = LocalInsightEngine()
 results = engine.analyze_document(Path("document.pdf"))
-```
+```python
 
 ### Key Architecture Rules
 1. **Never modify Layer 1** to send original text externally

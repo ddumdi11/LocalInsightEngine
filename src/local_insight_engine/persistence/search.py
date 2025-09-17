@@ -50,6 +50,13 @@ class SmartSearchEngine:
     """
 
     def __init__(self, db_session: Optional[Session] = None):
+        """
+        Initialize SmartSearchEngine with optional database session.
+
+        Args:
+            db_session: SQLAlchemy session for database operations.
+                       If None, will create a new session when needed.
+        """
         self.db_session = db_session
 
     def _get_session(self) -> Session:
