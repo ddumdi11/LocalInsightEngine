@@ -72,14 +72,15 @@ class SpacyEntityExtractor:
         logger.info("Using German-only processing for entities")
         self.english_nlp = None
     
-    def extract_entities(self, text: str, source_paragraphs: List[int], source_pages: List[int]) -> List[EntityData]:
+    def extract_entities(self, text: str, source_paragraphs: List[int], source_pages: List[int], bypass_anonymization: bool = False) -> List[EntityData]:
         """
         Extract named entities using spaCy.
-        
+
         Args:
             text: Text to process
             source_paragraphs: Paragraph IDs where this text originated
             source_pages: Page numbers where this text originated
+            bypass_anonymization: If True, skips anonymization for factual content
             
         Returns:
             List of extracted entities with high confidence
@@ -115,8 +116,12 @@ class SpacyEntityExtractor:
                 
                 if confidence >= self.min_confidence:
                     # CRITICAL: Neutralize suspicious identifiers for copyright compliance
+                    # BUT: Skip neutralization in factual content mode
                     entity_text = ent.text.strip()
-                    neutralized_text = self._neutralize_suspicious_identifiers(entity_text)
+                    if bypass_anonymization:
+                        neutralized_text = entity_text  # Keep original in factual mode
+                    else:
+                        neutralized_text = self._neutralize_suspicious_identifiers(entity_text)
 
                     entity = EntityData(
                         text=neutralized_text,
@@ -211,7 +216,7 @@ class SpacyEntityExtractor:
         Neutralize suspicious test/canary identifiers while preserving legitimate terms.
 
         This targets obvious test patterns like CANARY_*, TEST_*, etc. while preserving
-        scientific terms (Phosphatidylserin), product names (Playstation 4), etc.
+        scientific terms (Phosphatidylserin), product names (Playstation 4), vitamins, etc.
 
         Args:
             entity_text: Original entity text
@@ -219,6 +224,22 @@ class SpacyEntityExtractor:
         Returns:
             Neutralized text or original if it appears to be legitimate
         """
+        # Whitelist for legitimate scientific and health terms
+        legitimate_patterns = [
+            # Vitamins and nutrients
+            r'^(Vitamin\s+)?[ABCDEK]\d{1,2}$',  # B3, B12, D3, etc.
+            r'^(Vitamin\s+)?(Niacin|Thiamin|Riboflavin|Biotin|Folat|Cobalamin)$',
+            r'^(Magnesium|Calcium|Kalium|Eisen|Zink|Selen)$',
+            # Common health/nutrition terms
+            r'^(Phosphatidyl\w+|Omega-?\d+|Aminosäure\w*)$',
+            # Product names and brands (common patterns)
+            r'^[A-Z][a-z]+\s+\d+$',  # "Playstation 4", "iPhone 12"
+        ]
+
+        # Check if entity matches legitimate patterns first
+        for pattern in legitimate_patterns:
+            if re.match(pattern, entity_text, re.IGNORECASE):
+                return entity_text  # Preserve legitimate terms
         # Patterns that indicate test/canary/debug identifiers
         # pattern, flags
         suspicious_patterns = [

@@ -89,6 +89,15 @@ class LocalInsightEngineGUI:
         btn_frame = ttk.Frame(actions_frame)
         btn_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
 
+        # Factual content mode checkbox
+        self.factual_mode_var = tk.BooleanVar(value=False)
+        factual_checkbox = ttk.Checkbutton(
+            actions_frame,
+            text="Sachbuch-Modus (keine Anonymisierung gängiger Begriffe)",
+            variable=self.factual_mode_var
+        )
+        factual_checkbox.grid(row=1, column=0, sticky=tk.W, pady=(10, 5))
+
         # Action buttons
         ttk.Button(btn_frame, text="Analyze Document", command=self.analyze_document).grid(
             row=0, column=0, padx=(0, 5)
@@ -219,7 +228,9 @@ class LocalInsightEngineGUI:
     def _analyze_document_bg(self):
         """Background thread for document analysis"""
         try:
-            analysis_dict = self.engine.analyze_document(self.current_document)
+            # Get factual mode setting from GUI
+            factual_mode = self.factual_mode_var.get()
+            analysis_dict = self.engine.analyze_document(self.current_document, factual_mode=factual_mode)
             # Convert dict to AnalysisResult object with robust error handling
             if isinstance(analysis_dict, dict):
                 try:

@@ -35,12 +35,13 @@ class LocalInsightEngine:
         self.last_processed_data = None
         self.last_analysis_result = None
     
-    def analyze_document(self, document_path: Path) -> dict:
+    def analyze_document(self, document_path: Path, factual_mode: bool = False) -> dict:
         """
         Analyze a document through the 3-layer architecture.
 
         Args:
             document_path: Path to the document to analyze
+            factual_mode: If True, disables anonymization of common factual terms
 
         Returns:
             Analysis results dictionary
@@ -51,7 +52,7 @@ class LocalInsightEngine:
         document = self.document_loader.load(document_path)
 
         # Layer 2: Process and neutralize content
-        processed_data = self.text_processor.process(document)
+        processed_data = self.text_processor.process(document, bypass_anonymization=factual_mode)
 
         # Layer 3: Analyze with LLM
         analysis = self.llm_client.analyze(processed_data)
@@ -171,7 +172,7 @@ Please provide a helpful and accurate answer based only on the document content 
         document = self.document_loader.load(document_path)
         
         # Layer 2: Process and neutralize content
-        processed_data = self.text_processor.process(document)
+        processed_data = self.text_processor.process(document, bypass_anonymization=factual_mode)
         
         # Layer 3: Analyze with LLM
         analysis = self.llm_client.analyze(processed_data)

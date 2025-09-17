@@ -30,13 +30,14 @@ class TextProcessor:
         self.statement_extractor = SpacyStatementExtractor()
         self.entity_extractor = SpacyEntityExtractor()
         
-    def process(self, document: Document) -> ProcessedText:
+    def process(self, document: Document, bypass_anonymization: bool = False) -> ProcessedText:
         """
         Process document content into neutralized chunks.
-        
+
         Args:
             document: Original document from Layer 1
-            
+            bypass_anonymization: If True, skips anonymization for factual content
+
         Returns:
             ProcessedText with neutralized content safe for external APIs
         """
@@ -52,7 +53,7 @@ class TextProcessor:
         all_statements = []
         
         for chunk_data in chunks:
-            processed_chunk = self._process_chunk(chunk_data, document.id)
+            processed_chunk = self._process_chunk(chunk_data, document.id, bypass_anonymization)
             processed_chunks.append(processed_chunk)
             all_entities.extend(processed_chunk.entities)
             all_statements.extend(processed_chunk.key_statements)
@@ -118,7 +119,7 @@ class TextProcessor:
         
         return chunks
     
-    def _process_chunk(self, chunk_data: Dict, document_id) -> TextChunk:
+    def _process_chunk(self, chunk_data: Dict, document_id, bypass_anonymization: bool = False) -> TextChunk:
         """Process a single chunk into neutralized content."""
         original_text = chunk_data['text']
 
@@ -129,11 +130,12 @@ class TextProcessor:
         entities = self.entity_extractor.extract_entities(
             original_text,
             chunk_data['source_paragraphs'],
-            chunk_data['source_pages']
+            chunk_data['source_pages'],
+            bypass_anonymization=bypass_anonymization
         )
 
         # Create neutralized content by combining key statements AND neutralized text
-        neutralized_content = self._neutralize_content(key_statements, entities, original_text)
+        neutralized_content = self._neutralize_content(key_statements, entities, original_text, bypass_anonymization)
 
         return TextChunk(
             neutralized_content=neutralized_content,
@@ -146,12 +148,13 @@ class TextProcessor:
             word_count=len(original_text.split())
         )
     
-    def _neutralize_content(self, statements: List[str], entities: List[EntityData], original_text: str) -> str:
+    def _neutralize_content(self, statements: List[str], entities: List[EntityData], original_text: str, bypass_anonymization: bool = False) -> str:
         """
         Create neutralized content that preserves meaning without original wording.
 
         This is the core copyright compliance function - it ensures that no
         original creative expression is preserved in the output.
+        In factual content mode, original text is preserved for scientific/factual terms.
         """
         # Combine statements into neutral, factual representations
         neutralized_parts = []
@@ -178,8 +181,12 @@ class TextProcessor:
         # Add neutralized text content for Q&A (but keep it factual and anonymized)
         # This preserves key information while avoiding copyright issues
         if original_text and len(original_text.strip()) > 50:
-            # Simple neutralization: replace proper nouns with entity labels but keep structure
-            neutralized_text = self._create_neutral_summary(original_text, entities)
+            if bypass_anonymization:
+                # In factual mode, preserve original text for scientific content
+                neutralized_text = original_text
+            else:
+                # Simple neutralization: replace proper nouns with entity labels but keep structure
+                neutralized_text = self._create_neutral_summary(original_text, entities)
             if neutralized_text:
                 neutralized_parts.append(f"\nNeutralized content summary:")
                 neutralized_parts.append(neutralized_text[:500])  # Limit length
