@@ -67,7 +67,7 @@ class PersistentQASession(Base):
             "('consent','contract','legal_obligation','vital_interests','public_task','legitimate_interests')",
             name='valid_consent_basis'
         ),
-        UniqueConstraint('document_hash', name='unique_document_hash'),
+        UniqueConstraint('document_hash', 'pepper_id', name='unique_document_hash_per_pepper'),
         Index('idx_sessions_last_accessed', 'last_accessed'),
         Index('idx_sessions_created_at', 'created_at'),
         Index('idx_sessions_pepper_id', 'pepper_id'),
