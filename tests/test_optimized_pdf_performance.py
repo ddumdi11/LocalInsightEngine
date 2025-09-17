@@ -8,6 +8,7 @@ Test the new StreamingDocumentLoader with performance metrics.
 import sys
 import time
 import logging
+import unittest
 from pathlib import Path
 
 # Add src to path
@@ -34,7 +35,7 @@ def test_optimized_pdf_loader():
         if not pdf_path.exists():
             logger.error(f"❌ Test PDF not found: {pdf_path}")
             logger.info("Place a PDF file named 'german_sample.pdf' in the project root.")
-            return
+            raise unittest.SkipTest(f"Test PDF not found: {pdf_path}")
 
         file_size_mb = pdf_path.stat().st_size / 1024 / 1024
         logger.info(f"🚀 Testing Optimized PDF Loader")

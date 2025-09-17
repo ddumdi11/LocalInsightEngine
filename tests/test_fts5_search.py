@@ -6,8 +6,10 @@ Tests SmartSearchEngine and repository search methods.
 import sys
 import tempfile
 import time
+import uuid
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
+from unittest.mock import patch
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -45,12 +47,19 @@ def create_test_data(repo: SessionRepository) -> dict:
             executive_summary="Document about vitamin benefits and nutrition"
         )
 
-        session1 = repo.create_session(
-            document_path=doc_path,
-            analysis_result=analysis1,
-            display_name="Nutrition Guide",
-            tags=["health", "vitamins", "nutrition"]
-        )
+        # Use unique pepper_id to avoid UniqueConstraint collision
+        with patch('local_insight_engine.persistence.repository.PersistentQASession') as MockSession:
+            def create_session_with_unique_pepper(**kwargs):
+                kwargs['pepper_id'] = f"test_pepper_nutrition_{uuid.uuid4().hex[:8]}"
+                return PersistentQASession(**kwargs)
+
+            MockSession.side_effect = create_session_with_unique_pepper
+            session1 = repo.create_session(
+                document_path=doc_path,
+                analysis_result=analysis1,
+                display_name="Nutrition Guide",
+                tags=["health", "vitamins", "nutrition"]
+            )
         sessions['nutrition'] = session1
 
         # Add Q&A exchanges to session 1
@@ -127,12 +136,19 @@ def create_test_data(repo: SessionRepository) -> dict:
             executive_summary="Mental health and stress management strategies"
         )
 
-        session3 = repo.create_session(
-            document_path=doc_path,
-            analysis_result=analysis3,
-            display_name="Mental Wellness Guide",
-            tags=["mental_health", "stress", "wellbeing"]
-        )
+        # Use unique pepper_id to avoid UniqueConstraint collision
+        with patch('local_insight_engine.persistence.repository.PersistentQASession') as MockSession:
+            def create_session_with_unique_pepper(**kwargs):
+                kwargs['pepper_id'] = f"test_pepper_mental_{uuid.uuid4().hex[:8]}"
+                return PersistentQASession(**kwargs)
+
+            MockSession.side_effect = create_session_with_unique_pepper
+            session3 = repo.create_session(
+                document_path=doc_path,
+                analysis_result=analysis3,
+                display_name="Mental Wellness Guide",
+                tags=["mental_health", "stress", "wellbeing"]
+            )
         sessions['mental_health'] = session3
 
         # Add Q&A exchanges to session 3

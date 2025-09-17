@@ -18,7 +18,7 @@ from local_insight_engine.persistence.repository import SessionRepository
 from local_insight_engine.models.analysis import AnalysisResult
 
 
-def test_database_setup():
+def test_database_setup() -> None:
     """Test database initialization and table creation."""
     print("TESTING: Database setup...")
 
@@ -47,7 +47,7 @@ def test_database_setup():
             pass  # Ignore cleanup errors
 
 
-def test_model_creation():
+def test_model_creation() -> None:
     """Test creating and storing models."""
     print("TESTING: Model creation...")
 
@@ -131,11 +131,17 @@ def test_model_creation():
             print(f"SUCCESS: Q&A exchange created with ID: {exchange.exchange_id}")
 
     finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
+        # Cleanup - close engine first
+        try:
+            if 'db_manager' in locals():
+                db_manager.engine.dispose()
+            if tmp_path.exists():
+                tmp_path.unlink()
+        except Exception:
+            pass  # Ignore cleanup errors
 
 
-def test_repository_operations():
+def test_repository_operations() -> None:
     """Test repository CRUD operations."""
     print("TESTING: Repository operations...")
 
@@ -240,11 +246,17 @@ def test_repository_operations():
                 doc_path.unlink()
 
     finally:
-        if tmp_path.exists():
-            tmp_path.unlink()
+        # Cleanup - close engine first
+        try:
+            if 'db_manager' in locals():
+                db_manager.engine.dispose()
+            if tmp_path.exists():
+                tmp_path.unlink()
+        except Exception:
+            pass  # Ignore cleanup errors
 
 
-def run_all_tests():
+def run_all_tests() -> bool:
     """Run all persistence tests."""
     print("PERSISTENCE LAYER TESTS")
     print("=" * 40)
