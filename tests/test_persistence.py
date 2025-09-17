@@ -153,10 +153,11 @@ def test_repository_operations():
             doc_path = Path(doc.name)
 
         try:
-            # Create repository
-            repo = SessionRepository()
+            # Create repository bound to the temporary DB session
+            with db_manager.get_session() as db_sess:
+                repo = SessionRepository(db_session=db_sess)
 
-            # Test analysis result with correct structure
+                # Test analysis result with correct structure
             test_insights = [
                 Insight(
                     title="Vitamin Analysis",
