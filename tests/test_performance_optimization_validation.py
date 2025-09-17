@@ -41,9 +41,8 @@ class PerformanceOptimizationValidator:
 
     def __init__(self):
         self.original_loader = DocumentLoader()
-        self.optimized_loader = OptimizedDocumentLoader()
+        self.optimized_loader = StreamingDocumentLoader()
         self.process = psutil.Process(os.getpid())
-
     def measure_performance(self, loader, document_path: Path) -> PerformanceMetrics:
         """Measure performance metrics for a loader implementation."""
         gc.collect()  # Clean up before measurement
