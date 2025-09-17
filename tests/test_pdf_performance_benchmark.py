@@ -50,17 +50,16 @@ class PDFPerformanceBenchmark:
         """Context manager to monitor memory usage during execution."""
         gc.collect()  # Clean up before measurement
         memory_before = self.process.memory_info().rss / 1024 / 1024  # MB
-        peak_memory = memory_before
 
         try:
-            yield lambda: peak_memory
+            yield
         finally:
             gc.collect()
             memory_after = self.process.memory_info().rss / 1024 / 1024  # MB
             self.last_memory_stats = {
                 'before': memory_before,
                 'after': memory_after,
-                'peak': max(peak_memory, memory_after)
+                'peak': max(memory_before, memory_after)
             }
 
     def _update_peak_memory(self, peak_tracker):
