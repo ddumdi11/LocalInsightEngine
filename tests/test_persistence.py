@@ -15,7 +15,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 from local_insight_engine.persistence.database import DatabaseManager, get_database_manager
 from local_insight_engine.persistence.models import PersistentQASession, QAExchange
 from local_insight_engine.persistence.repository import SessionRepository
-from local_insight_engine.models.analysis import AnalysisResult
+from local_insight_engine.models.analysis import AnalysisResult, Insight
+from uuid import uuid4
 
 
 def test_database_setup() -> None:
@@ -60,9 +61,6 @@ def test_model_creation() -> None:
         db_manager.create_tables()
 
         # Create test analysis result with correct structure
-        from local_insight_engine.models.analysis import Insight
-        from uuid import uuid4
-
         test_insights = [
             Insight(
                 title="Test Insight 1",

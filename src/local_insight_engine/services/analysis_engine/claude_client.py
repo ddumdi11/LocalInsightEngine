@@ -177,8 +177,13 @@ Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen."""
 
         start_time = datetime.now()
 
-        # Safe logging for Q&A - no content, just metrics
-        logger.info(f"Processing Q&A for {len(processed_text.chunks)} chunks")
+        # Safe logging for Q&A - mask question to prevent PII leaks
+        if self.debug_logging:
+            # Only log full question details when explicitly enabled
+            logger.debug(f"Processing Q&A for {len(processed_text.chunks)} chunks, question: {self._mask_potential_pii(question)}")
+        else:
+            # Production safe logging - no question content
+            logger.info(f"Processing Q&A for {len(processed_text.chunks)} chunks")
 
         try:
             # Prepare focused content for Q&A

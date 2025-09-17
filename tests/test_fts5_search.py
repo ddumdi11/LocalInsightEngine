@@ -9,7 +9,7 @@ import time
 import uuid
 from pathlib import Path
 from datetime import datetime, timezone, timedelta
-from unittest.mock import patch
+# Removed unused patch import
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -48,18 +48,13 @@ def create_test_data(repo: SessionRepository) -> dict:
         )
 
         # Use unique pepper_id to avoid UniqueConstraint collision
-        with patch('local_insight_engine.persistence.repository.PersistentQASession') as MockSession:
-            def create_session_with_unique_pepper(**kwargs):
-                kwargs['pepper_id'] = f"test_pepper_nutrition_{uuid.uuid4().hex[:8]}"
-                return PersistentQASession(**kwargs)
-
-            MockSession.side_effect = create_session_with_unique_pepper
-            session1 = repo.create_session(
-                document_path=doc_path,
-                analysis_result=analysis1,
-                display_name="Nutrition Guide",
-                tags=["health", "vitamins", "nutrition"]
-            )
+        session1 = repo.create_session(
+            document_path=doc_path,
+            analysis_result=analysis1,
+            display_name="Nutrition Guide",
+            tags=["health", "vitamins", "nutrition"],
+            pepper_id=f"test_pepper_nutrition_{uuid.uuid4().hex[:8]}"
+        )
         sessions['nutrition'] = session1
 
         # Add Q&A exchanges to session 1
@@ -99,7 +94,8 @@ def create_test_data(repo: SessionRepository) -> dict:
             document_path=doc_path,
             analysis_result=analysis2,
             display_name="Fitness Manual",
-            tags=["exercise", "fitness", "health"]
+            tags=["exercise", "fitness", "health"],
+            pepper_id=f"test_pepper_fitness_{uuid.uuid4().hex[:8]}"
         )
         sessions['fitness'] = session2
 
@@ -137,18 +133,13 @@ def create_test_data(repo: SessionRepository) -> dict:
         )
 
         # Use unique pepper_id to avoid UniqueConstraint collision
-        with patch('local_insight_engine.persistence.repository.PersistentQASession') as MockSession:
-            def create_session_with_unique_pepper(**kwargs):
-                kwargs['pepper_id'] = f"test_pepper_mental_{uuid.uuid4().hex[:8]}"
-                return PersistentQASession(**kwargs)
-
-            MockSession.side_effect = create_session_with_unique_pepper
-            session3 = repo.create_session(
-                document_path=doc_path,
-                analysis_result=analysis3,
-                display_name="Mental Wellness Guide",
-                tags=["mental_health", "stress", "wellbeing"]
-            )
+        session3 = repo.create_session(
+            document_path=doc_path,
+            analysis_result=analysis3,
+            display_name="Mental Wellness Guide",
+            tags=["mental_health", "stress", "wellbeing"],
+            pepper_id=f"test_pepper_mental_{uuid.uuid4().hex[:8]}"
+        )
         sessions['mental_health'] = session3
 
         # Add Q&A exchanges to session 3
@@ -191,68 +182,68 @@ def test_fts5_search_functionality():
         db_manager = DatabaseManager(tmp_path)
         db_manager.create_tables()
 
-        db_session = db_manager.get_session()
-        repo = SessionRepository(db_session=db_session)
-        # search_engine unused; repository delegates internally
+        with db_manager.get_session() as db_session:
+            repo = SessionRepository(db_session=db_session)
+            # search_engine unused; repository delegates internally
 
-        # Create test data
-        sessions = create_test_data(repo)
-        print(f"SUCCESS: Created {len(sessions)} test sessions")
+            # Create test data
+            sessions = create_test_data(repo)
+            print(f"SUCCESS: Created {len(sessions)} test sessions")
 
-        # Test 1: Basic keyword search
-        results = repo.search_qa_content("vitamin B3")
-        assert len(results) >= 1, f"Expected vitamin B3 results, got {len(results)}"
-        assert "vitamin B3" in results[0].question.lower() or "vitamin B3" in results[0].answer.lower()
-        print(f"SUCCESS: Basic search found {len(results)} results for 'vitamin B3'")
+            # Test 1: Basic keyword search
+            results = repo.search_qa_content("vitamin B3")
+            assert len(results) >= 1, f"Expected vitamin B3 results, got {len(results)}"
+            assert "vitamin B3" in results[0].question.lower() or "vitamin B3" in results[0].answer.lower()
+            print(f"SUCCESS: Basic search found {len(results)} results for 'vitamin B3'")
 
-        # Test 2: Multi-keyword search
-        results = repo.search_qa_content("exercise health benefits")
-        assert len(results) >= 2, f"Expected multiple results for exercise+health, got {len(results)}"
-        print(f"SUCCESS: Multi-keyword search found {len(results)} results")
+            # Test 2: Multi-keyword search
+            results = repo.search_qa_content("exercise health benefits")
+            assert len(results) >= 2, f"Expected multiple results for exercise+health, got {len(results)}"
+            print(f"SUCCESS: Multi-keyword search found {len(results)} results")
 
-        # Test 3: Bookmarked-only search
-        bookmarked_results = repo.search_qa_content("vitamin", bookmarked_only=True)
-        for result in bookmarked_results:
-            assert result.is_bookmarked, "Non-bookmarked result in bookmarked-only search"
-        print(f"SUCCESS: Bookmarked search found {len(bookmarked_results)} results")
+            # Test 3: Bookmarked-only search
+            bookmarked_results = repo.search_qa_content("vitamin", bookmarked_only=True)
+            for result in bookmarked_results:
+                assert result.is_bookmarked, "Non-bookmarked result in bookmarked-only search"
+            print(f"SUCCESS: Bookmarked search found {len(bookmarked_results)} results")
 
-        # Test 4: Similar questions
-        similar = repo.find_similar_questions("What are vitamin benefits?")
-        assert len(similar) >= 1, "Expected similar questions"
-        print(f"SUCCESS: Similar questions found {len(similar)} results")
+            # Test 4: Similar questions
+            similar = repo.find_similar_questions("What are vitamin benefits?")
+            assert len(similar) >= 1, "Expected similar questions"
+            print(f"SUCCESS: Similar questions found {len(similar)} results")
 
-        # Test 5: Related insights across sessions
-        nutrition_session_id = sessions['nutrition'].session_id
-        related = repo.get_related_insights(nutrition_session_id)
-        # Should find exercise-related content due to health overlap
-        assert len(related) >= 1, "Expected related insights from other sessions"
-        print(f"SUCCESS: Related insights found {len(related)} results")
+            # Test 5: Related insights across sessions
+            nutrition_session_id = sessions['nutrition'].session_id
+            related = repo.get_related_insights(nutrition_session_id)
+            # Should find exercise-related content due to health overlap
+            assert len(related) >= 1, "Expected related insights from other sessions"
+            print(f"SUCCESS: Related insights found {len(related)} results")
 
-        # Test 6: Tag-based search
-        tag_results = repo.search_by_tags(["health"])
-        assert len(tag_results) >= 2, "Expected multiple results for health tag"
-        print(f"SUCCESS: Tag search found {len(tag_results)} results")
+            # Test 6: Tag-based search
+            tag_results = repo.search_by_tags(["health"])
+            assert len(tag_results) >= 2, "Expected multiple results for health tag"
+            print(f"SUCCESS: Tag search found {len(tag_results)} results")
 
-        # Test 7: Combined tag search (AND logic)
-        specific_tags = repo.search_by_tags(["health", "vitamins"], match_all=True)
-        print(f"SUCCESS: Specific tag combination found {len(specific_tags)} results")
+            # Test 7: Combined tag search (AND logic)
+            specific_tags = repo.search_by_tags(["health", "vitamins"], match_all=True)
+            print(f"SUCCESS: Specific tag combination found {len(specific_tags)} results")
 
-        # Test 8: Search statistics
-        stats = repo.get_search_statistics()
-        assert "search_index" in stats
-        assert stats["search_index"]["total_indexed_exchanges"] >= 6
-        print(f"SUCCESS: Search statistics - {stats['search_index']['total_indexed_exchanges']} indexed exchanges")
+            # Test 8: Search statistics
+            stats = repo.get_search_statistics()
+            assert "search_index" in stats
+            assert stats["search_index"]["total_indexed_exchanges"] >= 6
+            print(f"SUCCESS: Search statistics - {stats['search_index']['total_indexed_exchanges']} indexed exchanges")
 
-        # Test 9: Search ranking (time decay)
-        recent_results = repo.search_qa_content("exercise", time_decay_weight=0.8)
-        older_results = repo.search_qa_content("exercise", time_decay_weight=0.1)
-        print(f"SUCCESS: Time decay scoring - recent: {len(recent_results)}, older: {len(older_results)}")
+            # Test 9: Search ranking (time decay)
+            recent_results = repo.search_qa_content("exercise", time_decay_weight=0.8)
+            older_results = repo.search_qa_content("exercise", time_decay_weight=0.1)
+            print(f"SUCCESS: Time decay scoring - recent: {len(recent_results)}, older: {len(older_results)}")
 
-        # Test 10: Search query sanitization
-        problematic_query = 'vitamin "unclosed quote [brackets] {braces}'
-        sanitized_results = repo.search_qa_content(problematic_query)
-        # Should not crash and should return results
-        print(f"SUCCESS: Query sanitization handled problematic query, found {len(sanitized_results)} results")
+            # Test 10: Search query sanitization
+            problematic_query = 'vitamin "unclosed quote [brackets] {braces}'
+            sanitized_results = repo.search_qa_content(problematic_query)
+            # Should not crash and should return results
+            print(f"SUCCESS: Query sanitization handled problematic query, found {len(sanitized_results)} results")
 
         print("ALL FTS5 SEARCH TESTS PASSED!")
         return True
@@ -284,36 +275,37 @@ def test_search_performance():
         db_manager = DatabaseManager(tmp_path)
         db_manager.create_tables()
 
-        repo = SessionRepository()
+        with db_manager.get_session() as db_session:
+            repo = SessionRepository(db_session=db_session)
 
-        # Create test data
-        sessions = create_test_data(repo)
+            # Create test data
+            sessions = create_test_data(repo)
 
-        # Performance test queries
-        test_queries = [
-            "vitamin benefits",
-            "exercise health",
-            "stress management",
-            "daily allowance",
-            "cardiovascular health",
-            "mental wellbeing"
-        ]
+            # Performance test queries
+            test_queries = [
+                "vitamin benefits",
+                "exercise health",
+                "stress management",
+                "daily allowance",
+                "cardiovascular health",
+                "mental wellbeing"
+            ]
 
-        start_time = time.time()
-        total_results = 0
+            start_time = time.time()
+            total_results = 0
 
-        for query in test_queries:
-            results = repo.search_qa_content(query, limit=10)
-            total_results += len(results)
+            for query in test_queries:
+                results = repo.search_qa_content(query, limit=10)
+                total_results += len(results)
 
-        end_time = time.time()
-        avg_time = (end_time - start_time) / len(test_queries)
+            end_time = time.time()
+            avg_time = (end_time - start_time) / len(test_queries)
 
-        print(f"SUCCESS: Performance test completed")
-        print(f"  - {len(test_queries)} queries executed")
-        print(f"  - {total_results} total results")
-        print(f"  - Average query time: {avg_time:.3f} seconds")
-        print(f"  - All queries under 1 second: {'YES' if avg_time < 1.0 else 'NO'}")
+            print(f"SUCCESS: Performance test completed")
+            print(f"  - {len(test_queries)} queries executed")
+            print(f"  - {total_results} total results")
+            print(f"  - Average query time: {avg_time:.3f} seconds")
+            print(f"  - All queries under 1 second: {'YES' if avg_time < 1.0 else 'NO'}")
 
         return True
 

@@ -3,6 +3,7 @@ Automated GUI Test for LocalInsightEngine GUI
 Tests GUI components and functionality programmatically without manual interaction.
 """
 
+import logging
 import tkinter as tk
 import sys
 import threading
@@ -89,15 +90,15 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
                 else:
                     self.log_test(f"GUI Component: {desc}", False, f"Missing {attr}")
 
-            return True
-
         except tk.TclError as e:
             self.log_test("GUI Initialization", False, f"Tkinter error: {e}")
             return False
-        except Exception as e:
+        except (AttributeError, ValueError) as e:
             # Re-raise non-Tkinter exceptions as they might indicate real problems
             self.log_test("GUI Initialization", False, f"Unexpected error: {e}")
             raise
+        else:
+            return True
 
     def test_file_selection(self) -> bool:
         """Test file selection functionality"""
@@ -106,6 +107,13 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             self.gui.current_document = self.test_document
             self.gui.file_path_var.set(str(self.test_document))
 
+        except tk.TclError as e:
+            self.log_test("File Selection", False, f"Tkinter error: {e}")
+            return False
+        except AttributeError as e:
+            self.log_test("File Selection", False, f"GUI component missing: {e}")
+            return False
+        else:
             # Check if file path is set
             if self.gui.current_document == self.test_document:
                 self.log_test("File Selection", True, f"Document path set: {self.test_document}")
@@ -113,10 +121,6 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
             else:
                 self.log_test("File Selection", False, "Document path not set correctly")
                 return False
-
-        except tk.TclError as e:
-            self.log_test("File Selection", False, f"Exception: {e}")
-            return False
     def test_document_analysis(self) -> bool:
         """Test document analysis functionality"""
         try:
@@ -139,21 +143,24 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
                 # Simulate analysis
                 self.gui.analysis_result = mock_analysis
 
-                # Check if analysis result is set
-                if self.gui.analysis_result:
-                    self.log_test("Document Analysis", True, "Analysis result set successfully")
+                # Enable ask button (normally done after successful analysis)
+                self.gui.ask_button.config(state="normal")
 
-                    # Enable ask button (normally done after successful analysis)
-                    self.gui.ask_button.config(state="normal")
-
-                    return True
-                else:
-                    self.log_test("Document Analysis", False, "Analysis result not set")
-                    return False
-
-        except Exception as e:
-            self.log_test("Document Analysis", False, f"Exception: {e}")
+        except (AttributeError, tk.TclError) as e:
+            self.log_test("Document Analysis", False, f"GUI error: {e}")
             return False
+        except Exception as e:
+            self.log_test("Document Analysis", False, f"Unexpected error: {e}")
+            logging.exception("Document analysis test failed")
+            raise
+        else:
+            # Check if analysis result is set
+            if self.gui.analysis_result:
+                self.log_test("Document Analysis", True, "Analysis result set successfully")
+                return True
+            else:
+                self.log_test("Document Analysis", False, "Analysis result not set")
+                return False
 
     def test_qa_functionality(self) -> bool:
         """Test Q&A functionality"""
@@ -171,36 +178,46 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
                 # Simulate Q&A background process
                 try:
                     self.gui._ask_question_bg(test_question)
-
-                    # Since we can't wait for async GUI updates, just check if the method ran
-                    self.log_test("Q&A Functionality", True, "Q&A method executed successfully")
-                    return True
                 except Exception as qa_error:
                     # If there's an error in Q&A, it might be due to missing API key, which is expected
                     if "API key" in str(qa_error).lower():
                         self.log_test("Q&A Functionality", True, "Q&A method works (API key needed for full test)")
                         return True
                     else:
-                        raise qa_error
+                        raise
+                else:
+                    # Since we can't wait for async GUI updates, just check if the method ran
+                    self.log_test("Q&A Functionality", True, "Q&A method executed successfully")
+                    return True
 
-        except Exception as e:
-            self.log_test("Q&A Functionality", False, f"Exception: {e}")
+        except (AttributeError, tk.TclError) as e:
+            self.log_test("Q&A Functionality", False, f"GUI error: {e}")
             return False
+        except Exception as e:
+            self.log_test("Q&A Functionality", False, f"Unexpected error: {e}")
+            logging.exception("Q&A functionality test failed")
+            raise
 
     def test_gui_cleanup(self) -> bool:
         """Test GUI cleanup and window closing"""
         try:
             if self.gui and self.gui.root:
                 # Don't actually close during test, just verify we can
-                self.log_test("GUI Cleanup", True, "GUI can be cleaned up properly")
-                return True
+                pass
             else:
                 self.log_test("GUI Cleanup", False, "GUI not initialized for cleanup")
                 return False
 
-        except Exception as e:
-            self.log_test("GUI Cleanup", False, f"Exception: {e}")
+        except AttributeError as e:
+            self.log_test("GUI Cleanup", False, f"GUI attribute error: {e}")
             return False
+        except Exception as e:
+            self.log_test("GUI Cleanup", False, f"Unexpected error: {e}")
+            logging.exception("GUI cleanup test failed")
+            raise
+        else:
+            self.log_test("GUI Cleanup", True, "GUI can be cleaned up properly")
+            return True
 
     def run_all_tests(self) -> None:
         """Run all GUI tests"""
@@ -246,9 +263,11 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
                 # Don't call mainloop, just cleanup
                 self.gui.root.quit()
                 self.gui.root.destroy()
-                logger.info("GUI cleaned up successfully")
+                print("GUI cleaned up successfully")
             except tk.TclError as e:
-                logger.warning("GUI cleanup error: %s", e)
+                print(f"GUI cleanup error: {e}")
+            except AttributeError as e:
+                print(f"GUI cleanup - attribute error: {e}")
 
 
 def main() -> None:
@@ -260,8 +279,11 @@ def main() -> None:
     def run_tests():
         try:
             runner.run_all_tests()
-        except Exception as e:
+        except (RuntimeError, ValueError, AttributeError) as e:
             print(f"Test runner failed: {e}")
+        except Exception as e:
+            print(f"Test runner failed with unexpected error: {e}")
+            logging.exception("Test runner failed unexpectedly")
 
     # Run tests
     run_tests()
