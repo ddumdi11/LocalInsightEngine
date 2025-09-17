@@ -246,9 +246,9 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
                 # Don't call mainloop, just cleanup
                 self.gui.root.quit()
                 self.gui.root.destroy()
-                print("\nGUI cleaned up successfully")
-            except:
-                pass
+                logger.info("GUI cleaned up successfully")
+            except tk.TclError as e:
+                logger.warning("GUI cleanup error: %s", e)
 
 
 def main() -> None:
