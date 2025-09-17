@@ -116,10 +116,9 @@ def test_optimized_pdf_loader():
         logger.info("✅ Optimized PDF loader test completed successfully!")
         logger.info(f"💡 Recommendation: {'Streaming was used' if file_info['will_use_streaming'] else 'Standard processing was sufficient'}")
 
-    except Exception as e:
-        logger.error(f"❌ Error during processing: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception:
+        logger.exception("Error during optimized PDF loader test")
+        raise
     finally:
         # Restore original working directory
         os.chdir(original_cwd)
