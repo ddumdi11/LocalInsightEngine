@@ -10,6 +10,7 @@ import time
 import gc
 import psutil
 import os
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
@@ -19,6 +20,8 @@ from contextlib import contextmanager
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from local_insight_engine.services.data_layer.document_loader import DocumentLoader
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -136,22 +139,22 @@ class PDFPerformanceBenchmark:
         """Benchmark processing of multiple PDF files."""
         results = []
 
-        print(f"📊 Starting benchmark of {len(pdf_paths)} PDF files...")
-        print("=" * 80)
+        logger.info(f"📊 Starting benchmark of {len(pdf_paths)} PDF files...")
+        logger.info("=" * 80)
 
         for i, pdf_path in enumerate(pdf_paths, 1):
-            print(f"[{i}/{len(pdf_paths)}] Processing: {pdf_path.name}")
+            logger.info(f"[{i}/{len(pdf_paths)}] Processing: {pdf_path.name}")
 
             result = self.benchmark_single_pdf(pdf_path)
             results.append(result)
 
             if result.success:
-                print(f"  ✅ Success: {result.processing_time_seconds:.2f}s, "
+                logger.info(f"  ✅ Success: {result.processing_time_seconds:.2f}s, "
                       f"{result.peak_memory_mb:.1f}MB peak, "
                       f"{result.page_count} pages, "
                       f"{result.word_count} words")
             else:
-                print(f"  ❌ Failed: {result.error_message}")
+                logger.error(f"  ❌ Failed: {result.error_message}")
 
             # Memory cleanup between files
             gc.collect()
@@ -281,7 +284,7 @@ class PDFPerformanceBenchmark:
         """Save performance report to file."""
         report = self.generate_performance_report()
         output_path.write_text(report, encoding='utf-8')
-        print(f"📊 Performance report saved to: {output_path}")
+        logger.info(f"📊 Performance report saved to: {output_path}")
 
 
 def run_benchmark():
@@ -308,8 +311,8 @@ def run_benchmark():
             test_pdfs.extend(pdf_pattern.parent.glob(pdf_pattern.name))
 
     if not test_pdfs:
-        print("⚠️  No test PDF files found. Creating synthetic benchmark...")
-        print("Place PDF files in project root or test_samples/ directory for realistic benchmarks.")
+        logger.warning("⚠️  No test PDF files found. Creating synthetic benchmark...")
+        logger.info("Place PDF files in project root or test_samples/ directory for realistic benchmarks.")
         return
 
     # Run benchmark
@@ -317,8 +320,8 @@ def run_benchmark():
     results = benchmark.benchmark_multiple_files(test_pdfs)
 
     # Generate and display report
-    print("\n" + "=" * 80)
-    print(benchmark.generate_performance_report())
+    logger.info("\n" + "=" * 80)
+    logger.info(benchmark.generate_performance_report())
 
     # Save report
     report_path = project_root / "performance_report.txt"

@@ -13,6 +13,7 @@ import time
 import gc
 import psutil
 import os
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
@@ -23,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from local_insight_engine.services.data_layer.document_loader import DocumentLoader
 from local_insight_engine.services.data_layer.optimized_document_loader import StreamingDocumentLoader
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -87,10 +90,10 @@ class PerformanceOptimizationValidator:
         """Compare original vs optimized implementation performance."""
         results = {}
 
-        print(f"Comparing implementations for: {document_path.name}")
+        logger.info(f"Comparing implementations for: {document_path.name}")
 
         # Test original implementation
-        print("  Testing original implementation...")
+        logger.info("  Testing original implementation...")
         results['original'] = self.measure_performance(self.original_loader, document_path)
 
         # Clean up between tests
@@ -98,7 +101,7 @@ class PerformanceOptimizationValidator:
         time.sleep(0.1)
 
         # Test optimized implementation
-        print("  Testing optimized implementation...")
+        logger.info("  Testing optimized implementation...")
         results['optimized'] = self.measure_performance(self.optimized_loader, document_path)
 
         return results
@@ -162,7 +165,7 @@ class TestPerformanceOptimization(unittest.TestCase):
 
     def test_small_document_optimization(self):
         """Test optimization performance on small documents."""
-        print("\n=== Testing Small Document Optimization ===")
+        logger.info("\n=== Testing Small Document Optimization ===")
 
         # Create small test document
         small_doc = self.create_test_pdf_content(pages=2, words_per_page=100)
@@ -178,10 +181,10 @@ class TestPerformanceOptimization(unittest.TestCase):
         if results['original'].success and results['optimized'].success:
             improvements = self.validator.analyze_performance_improvement(results)
 
-            print(f"  Original time: {improvements['original_time']:.4f}s")
-            print(f"  Optimized time: {improvements['optimized_time']:.4f}s")
-            print(f"  Speed improvement: {improvements['speed_improvement_percent']:.1f}%")
-            print(f"  Memory improvement: {improvements['memory_improvement_percent']:.1f}%")
+            logger.info(f"  Original time: {improvements['original_time']:.4f}s")
+            logger.info(f"  Optimized time: {improvements['optimized_time']:.4f}s")
+            logger.info(f"  Speed improvement: {improvements['speed_improvement_percent']:.1f}%")
+            logger.info(f"  Memory improvement: {improvements['memory_improvement_percent']:.1f}%")
 
             # For small documents, optimization might not show significant gains
             # But it should not be significantly worse
@@ -190,7 +193,7 @@ class TestPerformanceOptimization(unittest.TestCase):
 
     def test_medium_document_optimization(self):
         """Test optimization performance on medium-sized documents."""
-        print("\n=== Testing Medium Document Optimization ===")
+        logger.info("\n=== Testing Medium Document Optimization ===")
 
         # Create medium test document
         medium_doc = self.create_test_pdf_content(pages=10, words_per_page=1000)
@@ -206,10 +209,10 @@ class TestPerformanceOptimization(unittest.TestCase):
         if results['original'].success and results['optimized'].success:
             improvements = self.validator.analyze_performance_improvement(results)
 
-            print(f"  Original time: {improvements['original_time']:.4f}s")
-            print(f"  Optimized time: {improvements['optimized_time']:.4f}s")
-            print(f"  Speed improvement: {improvements['speed_improvement_percent']:.1f}%")
-            print(f"  Memory improvement: {improvements['memory_improvement_percent']:.1f}%")
+            logger.info(f"  Original time: {improvements['original_time']:.4f}s")
+            logger.info(f"  Optimized time: {improvements['optimized_time']:.4f}s")
+            logger.info(f"  Speed improvement: {improvements['speed_improvement_percent']:.1f}%")
+            logger.info(f"  Memory improvement: {improvements['memory_improvement_percent']:.1f}%")
 
             # Medium documents should show some improvement
             self.assertGreaterEqual(improvements['speed_improvement_percent'], -10,
@@ -217,7 +220,7 @@ class TestPerformanceOptimization(unittest.TestCase):
 
     def test_large_document_optimization(self):
         """Test optimization performance on large documents."""
-        print("\n=== Testing Large Document Optimization ===")
+        logger.info("\n=== Testing Large Document Optimization ===")
 
         # Create large test document
         large_doc = self.create_test_pdf_content(pages=50, words_per_page=2000)
@@ -233,10 +236,10 @@ class TestPerformanceOptimization(unittest.TestCase):
         if results['original'].success and results['optimized'].success:
             improvements = self.validator.analyze_performance_improvement(results)
 
-            print(f"  Original time: {improvements['original_time']:.4f}s")
-            print(f"  Optimized time: {improvements['optimized_time']:.4f}s")
-            print(f"  Speed improvement: {improvements['speed_improvement_percent']:.1f}%")
-            print(f"  Memory improvement: {improvements['memory_improvement_percent']:.1f}%")
+            logger.info(f"  Original time: {improvements['original_time']:.4f}s")
+            logger.info(f"  Optimized time: {improvements['optimized_time']:.4f}s")
+            logger.info(f"  Speed improvement: {improvements['speed_improvement_percent']:.1f}%")
+            logger.info(f"  Memory improvement: {improvements['memory_improvement_percent']:.1f}%")
 
             # Large documents should show significant improvement
             self.assertGreater(improvements['speed_improvement_percent'], 0,
@@ -244,7 +247,7 @@ class TestPerformanceOptimization(unittest.TestCase):
 
     def test_memory_efficiency_optimization(self):
         """Test memory efficiency improvements."""
-        print("\n=== Testing Memory Efficiency ===")
+        logger.info("\n=== Testing Memory Efficiency ===")
 
         # Create document designed to test memory usage
         memory_test_doc = self.create_test_pdf_content(pages=20, words_per_page=5000)
@@ -255,8 +258,8 @@ class TestPerformanceOptimization(unittest.TestCase):
             original_memory = results['original'].memory_delta_mb
             optimized_memory = results['optimized'].memory_delta_mb
 
-            print(f"  Original memory usage: {original_memory:.2f}MB")
-            print(f"  Optimized memory usage: {optimized_memory:.2f}MB")
+            logger.info(f"  Original memory usage: {original_memory:.2f}MB")
+            logger.info(f"  Optimized memory usage: {optimized_memory:.2f}MB")
 
             # Optimized version should use same or less memory
             memory_ratio = optimized_memory / original_memory if original_memory > 0 else 1
@@ -265,7 +268,7 @@ class TestPerformanceOptimization(unittest.TestCase):
 
     def test_concurrent_processing_optimization(self):
         """Test optimization performance under concurrent load."""
-        print("\n=== Testing Concurrent Processing ===")
+        logger.info("\n=== Testing Concurrent Processing ===")
 
         # Create multiple test documents
         test_docs = []
@@ -285,7 +288,7 @@ class TestPerformanceOptimization(unittest.TestCase):
                     if result:
                         success_count += 1
                 except Exception as e:
-                    print(f"Error processing {doc}: {e}")
+                    logger.error(f"Error processing {doc}: {e}")
 
             end_time = time.perf_counter()
             return end_time - start_time, success_count
@@ -296,8 +299,8 @@ class TestPerformanceOptimization(unittest.TestCase):
         # Test optimized implementation
         optimized_time, optimized_success = process_with_loader(self.validator.optimized_loader, test_docs)
 
-        print(f"  Original: {original_time:.4f}s ({original_success} successful)")
-        print(f"  Optimized: {optimized_time:.4f}s ({optimized_success} successful)")
+        logger.info(f"  Original: {original_time:.4f}s ({original_success} successful)")
+        logger.info(f"  Optimized: {optimized_time:.4f}s ({optimized_success} successful)")
 
         # Both should process all documents successfully
         self.assertEqual(original_success, len(test_docs), "Original implementation failed some documents")
@@ -310,7 +313,7 @@ class TestPerformanceOptimization(unittest.TestCase):
 
     def test_error_handling_consistency(self):
         """Test that optimization maintains error handling behavior."""
-        print("\n=== Testing Error Handling Consistency ===")
+        logger.info("\n=== Testing Error Handling Consistency ===")
 
         # Test with non-existent file
         non_existent = self.test_dir / "does_not_exist.txt"
@@ -334,7 +337,7 @@ class TestPerformanceOptimization(unittest.TestCase):
 
     def test_output_format_consistency(self):
         """Test that optimization maintains output format consistency."""
-        print("\n=== Testing Output Format Consistency ===")
+        logger.info("\n=== Testing Output Format Consistency ===")
 
         # Create test document
         test_doc = self.create_test_pdf_content(pages=3, words_per_page=200)
@@ -359,7 +362,7 @@ class TestPerformanceOptimization(unittest.TestCase):
         self.assertEqual(len(original_result.page_mapping), len(optimized_result.page_mapping),
                         "Different page mapping lengths between implementations")
 
-        print("  ✓ Output format consistency validated")
+        logger.info("  ✓ Output format consistency validated")
 
 
 class TestOptimizationRegression(unittest.TestCase):
@@ -419,10 +422,10 @@ class TestOptimizationRegression(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print("LocalInsightEngine - Performance Optimization Validation Tests")
-    print("=" * 70)
-    print("VALIDATION: Original vs Optimized DocumentLoader Performance & Correctness")
-    print("METRICS: Processing Speed, Memory Usage, Output Consistency")
-    print()
+    logger.info("LocalInsightEngine - Performance Optimization Validation Tests")
+    logger.info("=" * 70)
+    logger.info("VALIDATION: Original vs Optimized DocumentLoader Performance & Correctness")
+    logger.info("METRICS: Processing Speed, Memory Usage, Output Consistency")
+    logger.info("")
 
     unittest.main(verbosity=2, buffer=True)

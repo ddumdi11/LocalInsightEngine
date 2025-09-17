@@ -158,82 +158,82 @@ def test_repository_operations():
                 repo = SessionRepository(db_session=db_sess)
 
                 # Test analysis result with correct structure
-            test_insights = [
-                Insight(
-                    title="Vitamin Analysis",
-                    content="Vitamin analysis complete - B vitamins are important",
-                    confidence=0.92,
-                    category="analysis"
+                test_insights = [
+                    Insight(
+                        title="Vitamin Analysis",
+                        content="Vitamin analysis complete - B vitamins are important",
+                        confidence=0.92,
+                        category="analysis"
+                    )
+                ]
+
+                analysis_result = AnalysisResult(
+                    source_processed_text_id=uuid4(),
+                    insights=test_insights,
+                    main_themes=["vitamins", "nutrition"],
+                    executive_summary="Document about vitamin benefits"
                 )
-            ]
 
-            analysis_result = AnalysisResult(
-                source_processed_text_id=uuid4(),
-                insights=test_insights,
-                main_themes=["vitamins", "nutrition"],
-                executive_summary="Document about vitamin benefits"
-            )
+                # Test create session (inside with-block to keep session open)
+                session = repo.create_session(
+                    document_path=doc_path,
+                    analysis_result=analysis_result,
+                    neutralized_context="Safe neutralized content",
+                    display_name="Test Nutrition Document",
+                    tags=["nutrition", "vitamins", "health"]
+                )
 
-            # Test create session
-            session = repo.create_session(
-                document_path=doc_path,
-                analysis_result=analysis_result,
-                neutralized_context="Safe neutralized content",
-                display_name="Test Nutrition Document",
-                tags=["nutrition", "vitamins", "health"]
-            )
+                assert session is not None
+                assert session.document_display_name == "Test Nutrition Document"
+                assert len(session.session_tags) == 3
+                print(f"SUCCESS: Repository created session: {session.session_id}")
 
-            assert session is not None
-            assert session.document_display_name == "Test Nutrition Document"
-            assert len(session.session_tags) == 3
-            print(f"SUCCESS: Repository created session: {session.session_id}")
+                # Test get by ID (inside with-block to keep session open)
+                retrieved_session = repo.get_session_by_id(session.session_id)
+                assert retrieved_session is not None
+                assert retrieved_session.session_id == session.session_id
+                print("SUCCESS: Session retrieved by ID")
 
-            # Test get by ID
-            retrieved_session = repo.get_session_by_id(session.session_id)
-            assert retrieved_session is not None
-            assert retrieved_session.session_id == session.session_id
-            print("SUCCESS: Session retrieved by ID")
-
-            # Test add Q&A exchange
-            exchange = repo.add_qa_exchange(
-                session_id=session.session_id,
+                # Test add Q&A exchange (inside with-block to keep session open)
+                exchange = repo.add_qa_exchange(
+                    session_id=session.session_id,
                 question="What are the health benefits?",
                 answer="Vitamins support various bodily functions...",
                 confidence_score=0.88,
                 tokens_used=200,
                 is_bookmarked=True
-            )
+                )
 
-            assert exchange is not None
-            assert exchange.is_bookmarked == True
-            print(f"SUCCESS: Q&A exchange added: {exchange.exchange_id}")
+                assert exchange is not None
+                assert exchange.is_bookmarked == True
+                print(f"SUCCESS: Q&A exchange added: {exchange.exchange_id}")
 
-            # Test list sessions
-            sessions = repo.list_sessions(limit=10)
-            assert len(sessions) >= 1
-            assert sessions[0].session_id == session.session_id
-            print(f"SUCCESS: Listed sessions: {len(sessions)} found")
+                # Test list sessions (inside with-block to keep session open)
+                sessions = repo.list_sessions(limit=10)
+                assert len(sessions) >= 1
+                assert sessions[0].session_id == session.session_id
+                print(f"SUCCESS: Listed sessions: {len(sessions)} found")
 
-            # Test update session
-            updated = repo.update_session(
-                session.session_id,
-                is_favorite=True,
-                auto_generated_summary="Updated summary"
-            )
-            assert updated.is_favorite == True
-            assert updated.auto_generated_summary == "Updated summary"
-            print("SUCCESS: Session updated successfully")
+                # Test update session (inside with-block to keep session open)
+                updated = repo.update_session(
+                    session.session_id,
+                    is_favorite=True,
+                    auto_generated_summary="Updated summary"
+                )
+                assert updated.is_favorite == True
+                assert updated.auto_generated_summary == "Updated summary"
+                print("SUCCESS: Session updated successfully")
 
-            # Test search
-            found = repo.search_sessions("nutrition")
-            assert len(found) >= 1
-            print(f"SUCCESS: Search found {len(found)} sessions")
+                # Test search (inside with-block to keep session open)
+                found = repo.search_sessions("nutrition")
+                assert len(found) >= 1
+                print(f"SUCCESS: Search found {len(found)} sessions")
 
-            # Test statistics
-            stats = repo.get_session_statistics()
-            assert stats["total_sessions"] >= 1
-            assert stats["total_qa_exchanges"] >= 1
-            print(f"SUCCESS: Statistics: {stats}")
+                # Test statistics (inside with-block to keep session open)
+                stats = repo.get_session_statistics()
+                assert stats["total_sessions"] >= 1
+                assert stats["total_qa_exchanges"] >= 1
+                print(f"SUCCESS: Statistics: {stats}")
 
         finally:
             if doc_path.exists():

@@ -7,6 +7,7 @@ Test the new StreamingDocumentLoader with performance metrics.
 
 import sys
 import time
+import logging
 from pathlib import Path
 
 # Add src to path
@@ -14,6 +15,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import os
 from local_insight_engine.services.data_layer.optimized_document_loader import StreamingDocumentLoader
+
+logger = logging.getLogger(__name__)
 
 
 def test_optimized_pdf_loader():
@@ -29,14 +32,14 @@ def test_optimized_pdf_loader():
         pdf_path = project_root / "german_sample.pdf"
 
         if not pdf_path.exists():
-            print(f"❌ Test PDF not found: {pdf_path}")
-            print("Place a PDF file named 'german_sample.pdf' in the project root.")
+            logger.error(f"❌ Test PDF not found: {pdf_path}")
+            logger.info("Place a PDF file named 'german_sample.pdf' in the project root.")
             return
 
         file_size_mb = pdf_path.stat().st_size / 1024 / 1024
-        print(f"🚀 Testing Optimized PDF Loader")
-        print(f"📄 File: {pdf_path.name} ({file_size_mb:.1f} MB)")
-        print("=" * 60)
+        logger.info(f"🚀 Testing Optimized PDF Loader")
+        logger.info(f"📄 File: {pdf_path.name} ({file_size_mb:.1f} MB)")
+        logger.info("=" * 60)
 
         # Initialize optimized loader
         loader = StreamingDocumentLoader(
@@ -47,15 +50,15 @@ def test_optimized_pdf_loader():
 
         # Get file type info
         file_info = loader.get_file_type_info(pdf_path)
-        print(f"📊 File Analysis:")
-        print(f"   • Detected type: {file_info['detected_type']}")
-        print(f"   • Extension matches: {file_info['matches']}")
-        print(f"   • Will use streaming: {file_info['will_use_streaming']}")
-        print(f"   • PDF backend: {file_info['pdf_backend']}")
-        print()
+        logger.info(f"📊 File Analysis:")
+        logger.info(f"   • Detected type: {file_info['detected_type']}")
+        logger.info(f"   • Extension matches: {file_info['matches']}")
+        logger.info(f"   • Will use streaming: {file_info['will_use_streaming']}")
+        logger.info(f"   • PDF backend: {file_info['pdf_backend']}")
+        logger.info("")
 
         # Load document with timing
-        print("⏱️  Loading document...")
+        logger.info("⏱️  Loading document...")
         start_time = time.perf_counter()
 
         document = loader.load(pdf_path)
@@ -63,23 +66,23 @@ def test_optimized_pdf_loader():
         end_time = time.perf_counter()
         processing_time = end_time - start_time
 
-        print(f"✅ Document loaded successfully!")
-        print(f"   • Processing time: {processing_time:.2f} seconds")
-        print(f"   • File format: {document.metadata.file_format}")
-        print(f"   • Page count: {document.metadata.page_count}")
-        print(f"   • Word count: {document.metadata.word_count:,}")
-        print(f"   • Text length: {len(document.text_content):,} characters")
-        print(f"   • Paragraphs: {len(document.paragraph_mapping):,}")
-        print()
+        logger.info(f"✅ Document loaded successfully!")
+        logger.info(f"   • Processing time: {processing_time:.2f} seconds")
+        logger.info(f"   • File format: {document.metadata.file_format}")
+        logger.info(f"   • Page count: {document.metadata.page_count}")
+        logger.info(f"   • Word count: {document.metadata.word_count:,}")
+        logger.info(f"   • Text length: {len(document.text_content):,} characters")
+        logger.info(f"   • Paragraphs: {len(document.paragraph_mapping):,}")
+        logger.info("")
 
         # Get processing stats
         stats = loader.get_processing_stats()
-        print(f"📈 Processing Statistics:")
-        print(f"   • Pages processed: {stats.pages_processed}")
-        print(f"   • Paragraphs processed: {stats.paragraphs_processed:,}")
-        print(f"   • Total characters: {stats.total_chars:,}")
-        print(f"   • Chunks created: {stats.chunks_created}")
-        print()
+        logger.info(f"📈 Processing Statistics:")
+        logger.info(f"   • Pages processed: {stats.pages_processed}")
+        logger.info(f"   • Paragraphs processed: {stats.paragraphs_processed:,}")
+        logger.info(f"   • Total characters: {stats.total_chars:,}")
+        logger.info(f"   • Chunks created: {stats.chunks_created}")
+        logger.info("")
 
         # Performance metrics
         if stats.pages_processed > 0:
@@ -87,34 +90,34 @@ def test_optimized_pdf_loader():
             chars_per_second = stats.total_chars / processing_time
             mb_per_second = file_size_mb / processing_time
 
-            print(f"🏎️  Performance Metrics:")
-            print(f"   • Pages per second: {pages_per_second:.1f}")
-            print(f"   • Characters per second: {chars_per_second:,.0f}")
-            print(f"   • Throughput: {mb_per_second:.1f} MB/second")
-            print()
+            logger.info(f"🏎️  Performance Metrics:")
+            logger.info(f"   • Pages per second: {pages_per_second:.1f}")
+            logger.info(f"   • Characters per second: {chars_per_second:,.0f}")
+            logger.info(f"   • Throughput: {mb_per_second:.1f} MB/second")
+            logger.info("")
 
         # Show sample content
         if len(document.text_content) > 200:
-            print(f"📝 Sample Content (first 200 characters):")
-            print("-" * 50)
-            print(document.text_content[:200] + "...")
-            print()
+            logger.info(f"📝 Sample Content (first 200 characters):")
+            logger.info("-" * 50)
+            logger.info(document.text_content[:200] + "...")
+            logger.info("")
 
         # Test specific methods
         if document.page_mapping:
             first_page = min(document.page_mapping.keys())
             first_page_text = document.get_text_by_page(first_page)
             if first_page_text and len(first_page_text) > 100:
-                print(f"📖 First Page Sample (100 chars):")
-                print("-" * 50)
-                print(first_page_text[:100] + "...")
-                print()
+                logger.info(f"📖 First Page Sample (100 chars):")
+                logger.info("-" * 50)
+                logger.info(first_page_text[:100] + "...")
+                logger.info("")
 
-        print("✅ Optimized PDF loader test completed successfully!")
-        print(f"💡 Recommendation: {'Streaming was used' if file_info['will_use_streaming'] else 'Standard processing was sufficient'}")
+        logger.info("✅ Optimized PDF loader test completed successfully!")
+        logger.info(f"💡 Recommendation: {'Streaming was used' if file_info['will_use_streaming'] else 'Standard processing was sufficient'}")
 
     except Exception as e:
-        print(f"❌ Error during processing: {e}")
+        logger.error(f"❌ Error during processing: {e}")
         import traceback
         traceback.print_exc()
     finally:

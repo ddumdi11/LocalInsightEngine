@@ -12,6 +12,7 @@ import time
 import os
 import gc
 import sys
+import logging
 from pathlib import Path
 from typing import Dict, Any
 import psutil
@@ -21,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from local_insight_engine.services.data_layer.document_loader import DocumentLoader
 from local_insight_engine.services.data_layer.optimized_document_loader import StreamingDocumentLoader
+
+logger = logging.getLogger(__name__)
 
 
 class TestStreamingDocumentLoaderPerformance(unittest.TestCase):
@@ -195,9 +198,9 @@ class TestStreamingDocumentLoaderPerformance(unittest.TestCase):
         )
 
         # Performance comparison
-        print(f"\nText Loading Performance Comparison:")
-        print(f"Original:  {original_metrics['time_seconds']:.3f}s, {original_metrics['memory_mb']:.1f}MB")
-        print(f"Streaming: {streaming_metrics['time_seconds']:.3f}s, {streaming_metrics['memory_mb']:.1f}MB")
+        logger.info(f"\nText Loading Performance Comparison:")
+        logger.info(f"Original:  {original_metrics['time_seconds']:.3f}s, {original_metrics['memory_mb']:.1f}MB")
+        logger.info(f"Streaming: {streaming_metrics['time_seconds']:.3f}s, {streaming_metrics['memory_mb']:.1f}MB")
 
         # Streaming should not be significantly slower
         self.assertLess(
@@ -255,10 +258,10 @@ class TestStreamingDocumentLoaderPerformance(unittest.TestCase):
         memory_increase = post_load_memory - initial_memory
         memory_after_cleanup = final_memory - initial_memory
 
-        print(f"\nMemory Usage During Streaming:")
-        print(f"Initial: {initial_memory:.1f}MB")
-        print(f"Post-load: {post_load_memory:.1f}MB (+{memory_increase:.1f}MB)")
-        print(f"After cleanup: {final_memory:.1f}MB (+{memory_after_cleanup:.1f}MB)")
+        logger.info(f"\nMemory Usage During Streaming:")
+        logger.info(f"Initial: {initial_memory:.1f}MB")
+        logger.info(f"Post-load: {post_load_memory:.1f}MB (+{memory_increase:.1f}MB)")
+        logger.info(f"After cleanup: {final_memory:.1f}MB (+{memory_after_cleanup:.1f}MB)")
 
         # Memory should be reclaimed after cleanup
         self.assertLess(
@@ -327,10 +330,10 @@ class TestStreamingDocumentLoaderPerformance(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    print("LocalInsightEngine - Streaming Performance Tests")
-    print("=" * 60)
-    print("FOCUS: Performance optimization validation")
-    print("TARGET: StreamingDocumentLoader vs DocumentLoader")
-    print()
+    logger.info("LocalInsightEngine - Streaming Performance Tests")
+    logger.info("=" * 60)
+    logger.info("FOCUS: Performance optimization validation")
+    logger.info("TARGET: StreamingDocumentLoader vs DocumentLoader")
+    logger.info("")
 
     unittest.main(verbosity=2, buffer=True)
