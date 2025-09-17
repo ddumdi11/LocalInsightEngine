@@ -114,10 +114,9 @@ Gesunde Ernährung sollte ausgewogen sein und alle wichtigen Nährstoffe enthalt
                 self.log_test("File Selection", False, "Document path not set correctly")
                 return False
 
-        except Exception as e:
+        except tk.TclError as e:
             self.log_test("File Selection", False, f"Exception: {e}")
             return False
-
     def test_document_analysis(self) -> bool:
         """Test document analysis functionality"""
         try:
