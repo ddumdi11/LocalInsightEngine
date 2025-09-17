@@ -11,8 +11,7 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import desc, asc, func, or_, and_
-
+from sqlalchemy import desc, asc, func, or_, and_, text
 from .database import get_db_session
 from .models import PersistentQASession, QAExchange
 from .search import SmartSearchEngine, SearchResult
