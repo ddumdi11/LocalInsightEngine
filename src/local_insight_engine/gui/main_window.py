@@ -91,12 +91,21 @@ class LocalInsightEngineGUI:
 
         # Factual content mode checkbox
         self.factual_mode_var = tk.BooleanVar(value=False)
-        factual_checkbox = ttk.Checkbutton(
+        self.factual_checkbox = ttk.Checkbutton(
             actions_frame,
             text="Sachbuch-Modus (keine Anonymisierung gängiger Begriffe)",
             variable=self.factual_mode_var
         )
-        factual_checkbox.grid(row=1, column=0, sticky=tk.W, pady=(10, 5))
+        self.factual_checkbox.grid(row=1, column=0, sticky=tk.W, pady=(10, 5))
+
+        # Re-analyze button (initially hidden)
+        self.reanalyze_button = ttk.Button(
+            actions_frame,
+            text="🔄 Neu analysieren im Standard-Modus",
+            command=self.reanalyze_other_mode
+        )
+        # Initially hide the button
+        self.reanalyze_button.grid_remove()
 
         # Action buttons
         ttk.Button(btn_frame, text="Analyze Document", command=self.analyze_document).grid(
@@ -251,6 +260,9 @@ class LocalInsightEngineGUI:
         self.log_message("✓ Analysis completed successfully!")
         self.ask_button.config(state="normal")
 
+        # Update factual mode UI after analysis
+        self._update_factual_mode_ui()
+
     def _analysis_error(self, error_msg: str):
         """Handle analysis error"""
         self.log_message(f"✗ Analysis failed: {error_msg}")
@@ -394,6 +406,56 @@ GUI Features:
 
         messagebox.showinfo("Version Information", version_info)
         self.log_message("Version information displayed")
+
+    def _update_factual_mode_ui(self):
+        """Update factual mode UI after analysis"""
+        if self.analysis_result:
+            # Disable checkbox and update text
+            current_mode = self.factual_mode_var.get()
+            if current_mode:
+                self.factual_checkbox.config(
+                    state="disabled",
+                    text="☑ Sachbuch-Modus aktiv"
+                )
+                self.reanalyze_button.config(text="🔄 Neu analysieren im Standard-Modus")
+            else:
+                self.factual_checkbox.config(
+                    state="disabled",
+                    text="☐ Standard-Modus aktiv"
+                )
+                self.reanalyze_button.config(text="🔄 Neu analysieren im Sachbuch-Modus")
+
+            # Show re-analyze button
+            self.reanalyze_button.grid(row=2, column=0, sticky=tk.W, pady=(5, 5))
+        else:
+            # Enable checkbox for new analysis
+            self.factual_checkbox.config(
+                state="normal",
+                text="Sachbuch-Modus (keine Anonymisierung gängiger Begriffe)"
+            )
+            # Hide re-analyze button
+            self.reanalyze_button.grid_remove()
+
+    def reanalyze_other_mode(self):
+        """Re-analyze document in the other mode"""
+        if not self.current_document:
+            messagebox.showwarning("No Document", "Please select a document first.")
+            return
+
+        # Toggle the mode
+        current_mode = self.factual_mode_var.get()
+        self.factual_mode_var.set(not current_mode)
+
+        # Reset UI to pre-analysis state temporarily
+        self.factual_checkbox.config(state="normal")
+        self.reanalyze_button.grid_remove()
+
+        # Log the mode switch
+        new_mode = "Sachbuch-Modus" if not current_mode else "Standard-Modus"
+        self.log_message(f"🔄 Wechsle zu {new_mode} und analysiere neu...")
+
+        # Start re-analysis
+        self.run_in_thread(self._analyze_document_bg)
 
     def run(self):
         """Start the GUI application"""

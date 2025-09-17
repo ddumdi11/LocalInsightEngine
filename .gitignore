@@ -85,3 +85,8 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# Archive directories (not tracked)
+archive/
+*.old
+*.backup
