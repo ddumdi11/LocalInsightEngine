@@ -10,8 +10,10 @@ import time
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-# Add src to path
-sys.path.insert(0, str(Path.cwd().parent / "src"))
+# Add src to path (robust to working directory)
+src_path = Path(__file__).resolve().parents[1] / "src"
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
 from local_insight_engine.gui.main_window import LocalInsightEngineGUI
 from local_insight_engine.models.analysis import AnalysisResult, Insight
