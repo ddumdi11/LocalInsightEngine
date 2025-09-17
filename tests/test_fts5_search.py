@@ -175,8 +175,9 @@ def test_fts5_search_functionality():
         db_manager = DatabaseManager(tmp_path)
         db_manager.create_tables()
 
-        repo = SessionRepository()
-        search_engine = SmartSearchEngine()
+        db_session = db_manager.get_session()
+        repo = SessionRepository(db_session=db_session)
+        # search_engine unused; repository delegates internally
 
         # Create test data
         sessions = create_test_data(repo)
