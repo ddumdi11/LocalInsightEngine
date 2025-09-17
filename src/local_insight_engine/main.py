@@ -142,9 +142,9 @@ Please provide a helpful and accurate answer based only on the document content 
                     return (result.get('executive_summary') or
                            str(result.get('insights', 'No answer available')))
                 return str(result)
-        except Exception as e:
-            return f"Sorry, I could not process your question: {str(e)}"
-    
+        except Exception:
+            logger.exception("answer_question failed")
+            return "Sorry, I could not process your question due to a technical error."
     def analyze_and_export(
         self, 
         document_path: Path, 
