@@ -310,15 +310,21 @@ class SmartSearchEngine:
             """))
             stats = result.fetchone()
 
-            # Get content distribution
+            # Get content distribution from qa_exchanges table
             result = session.execute(text("""
                 SELECT
                     AVG(length(question)) as avg_question_length,
                     AVG(length(answer)) as avg_answer_length,
                     COUNT(CASE WHEN is_bookmarked = 1 THEN 1 END) as bookmarked_count
-                FROM qa_search_ranked
+                FROM qa_exchanges
             """))
             content_stats = result.fetchone()
+
+            # Get FTS coverage
+            result = session.execute(text("""
+                SELECT COUNT(*) AS fts_rows FROM qa_search
+            """))
+            fts_stats = result.fetchone()
 
             return {
                 "total_indexed_exchanges": int(stats.total_indexed_exchanges) if stats else 0,
@@ -326,6 +332,7 @@ class SmartSearchEngine:
                 "avg_question_length": float(content_stats.avg_question_length) if content_stats and content_stats.avg_question_length else 0,
                 "avg_answer_length": float(content_stats.avg_answer_length) if content_stats and content_stats.avg_answer_length else 0,
                 "bookmarked_exchanges": int(content_stats.bookmarked_count) if content_stats else 0,
+                "fts_rows": int(fts_stats.fts_rows) if fts_stats else 0,
                 "index_health": "healthy"
             }
 
