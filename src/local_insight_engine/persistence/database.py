@@ -65,8 +65,26 @@ class DatabaseManager:
 
     def create_tables(self):
         """Create all tables if they don't exist."""
+        # Import model modules to ensure they're registered with Base.metadata
+        try:
+            from . import models  # Import models module to register all ORM classes
+            logger.debug("Model modules imported successfully")
+        except ImportError as e:
+            logger.warning(f"Could not import models module: {e}")
+            # Try importing specific model classes as fallback
+            try:
+                from .models import Session, QAExchange, Document  # Import key models
+                logger.debug("Individual model classes imported as fallback")
+            except ImportError as fallback_error:
+                logger.error(f"Failed to import model classes: {fallback_error}")
+                raise
+
+        # Create all tables now that models are registered
         Base.metadata.create_all(bind=self.engine)
+
+        # Create FTS5 search tables
         self._create_fts5_search_tables()
+
         logger.info(f"Database tables created/verified at {self.db_path}")
 
     def _create_fts5_search_tables(self):

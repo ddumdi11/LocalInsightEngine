@@ -212,7 +212,7 @@ results = engine.analyze_document(Path("document.pdf"))
 ## Project Structure Guidelines
 
 ### File Organization
-```
+```text
 src/
 ├── package_name/
 │   ├── __init__.py
@@ -282,7 +282,7 @@ requirements/
 - Test error conditions and edge cases
 
 ### pytest Configuration
-```python
+```ini
 # pytest.ini or pyproject.toml
 [tool.pytest.ini_options]
 testpaths = ["tests"]

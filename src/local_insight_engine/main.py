@@ -130,15 +130,20 @@ Please provide a helpful and accurate answer based only on the document content 
             ]
         )
 
-        # Get answer from Claude
-        result = self.llm_client.analyze(qa_processed)
-
-        # Extract answer from result
-        if isinstance(result, dict):
-            return (result.get('executive_summary') or
-                   str(result.get('insights', 'No answer available')))
-
-        return str(result)
+        # Use dedicated Q&A method for better results
+        try:
+            # Try the new specialized Q&A method first
+            if hasattr(self.llm_client, 'answer_question'):
+                return self.llm_client.answer_question(self.last_processed_data, question)
+            else:
+                # Fallback to general analysis method
+                result = self.llm_client.analyze(qa_processed)
+                if isinstance(result, dict):
+                    return (result.get('executive_summary') or
+                           str(result.get('insights', 'No answer available')))
+                return str(result)
+        except Exception as e:
+            return f"Sorry, I could not process your question: {str(e)}"
     
     def analyze_and_export(
         self, 
