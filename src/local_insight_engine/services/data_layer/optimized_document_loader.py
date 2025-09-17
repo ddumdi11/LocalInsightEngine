@@ -249,14 +249,15 @@ class StreamingDocumentLoader:
     def _load_pdf_pymupdf_standard(self, file_path: Path, doc) -> Document:
         """Standard PyMuPDF processing for smaller PDFs."""
         # Use list accumulation for efficient string building
-        text_parts = []
+        text_parts: List[str] = []
         page_mapping = {}
         paragraph_mapping = {}
         paragraph_counter = 0
+        current_len = 0
 
         for page_num in range(doc.page_count):
             page = doc[page_num]
-            page_start = sum(len(part) for part in text_parts)
+            page_start = current_len
 
             # Extract text with layout preservation
             page_text = page.get_text("text")
@@ -266,15 +267,15 @@ class StreamingDocumentLoader:
 
             for para_text in paragraphs:
                 if para_text.strip():
-                    para_start = sum(len(part) for part in text_parts)
+                    para_start = current_len
                     cleaned_para = para_text.strip() + "\n\n"
                     text_parts.append(cleaned_para)
-
-                    para_end = sum(len(part) for part in text_parts)
+                    current_len += len(cleaned_para)
+                    para_end = current_len
                     paragraph_mapping[paragraph_counter] = (para_start, para_end)
                     paragraph_counter += 1
 
-            page_end = sum(len(part) for part in text_parts)
+            page_end = current_len
             page_mapping[page_num + 1] = (page_start, page_end)
 
         # Join all parts at once (more efficient than incremental concatenation)
