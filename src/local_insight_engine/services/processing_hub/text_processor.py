@@ -12,6 +12,7 @@ from ...models.document import Document
 from ...models.text_data import ProcessedText, TextChunk, EntityData
 from .spacy_statement_extractor import SpacyStatementExtractor
 from .spacy_entity_extractor import SpacyEntityExtractor
+from .statistics_collector import StatisticsCollector
 
 logger = logging.getLogger(__name__)
 
@@ -29,10 +30,11 @@ class TextProcessor:
         self.chunk_overlap = chunk_overlap
         self.statement_extractor = SpacyStatementExtractor()
         self.entity_extractor = SpacyEntityExtractor()
+        self.statistics_collector = StatisticsCollector()
         
     def process(self, document: Document, bypass_anonymization: bool = False) -> ProcessedText:
         """
-        Process document content into neutralized chunks.
+        Process document content into neutralized chunks with comprehensive statistics.
 
         Args:
             document: Original document from Layer 1
@@ -42,6 +44,19 @@ class TextProcessor:
             ProcessedText with neutralized content safe for external APIs
         """
         start_time = datetime.now()
+
+        # Initialize statistics collection
+        self.statistics_collector.start_timer("text_processing")
+        self.statistics_collector.set_document_info(
+            path=str(document.metadata.file_path),
+            size=document.metadata.file_size,
+            format=document.metadata.file_format,
+            text_length=len(document.text_content)
+        )
+        self.statistics_collector.set_processing_config(
+            factual_mode=bypass_anonymization,
+            bypass_anonymization=bypass_anonymization
+        )
         logger.info(f"Processing document: {document.metadata.file_path}")
         
         # Split text into overlapping chunks
@@ -63,7 +78,10 @@ class TextProcessor:
         summary_statements = self._create_summary_statements(all_statements)
         
         processing_time = (datetime.now() - start_time).total_seconds()
-        
+
+        # Record comprehensive entity statistics
+        self._collect_entity_statistics(all_entities, chunks, processing_time, bypass_anonymization)
+
         return ProcessedText(
             source_document_id=document.id,
             chunks=processed_chunks,
@@ -274,3 +292,30 @@ class TextProcessor:
         
         sorted_statements = sorted(all_statements, key=len, reverse=True)
         return sorted_statements[:5]  # Top 5 most substantial statements
+
+    def _collect_entity_statistics(self, all_entities: List[EntityData], chunks: List[Dict],
+                                  processing_time: float, bypass_anonymization: bool):
+        """Collect comprehensive entity extraction statistics."""
+
+        # Record chunk statistics
+        chunk_sizes = [len(chunk.get('text', '')) for chunk in chunks]
+        self.statistics_collector.record_chunk_statistics(len(chunks), chunk_sizes)
+
+        # Record entity extraction stage (this represents the final merged entities)
+        # For now, we're treating this as "post_anonymization" stage since entities have been processed
+        stage_name = "post_anonymization" if not bypass_anonymization else "factual_mode_extraction"
+
+        self.statistics_collector.record_entity_extraction_stage(
+            stage_name=stage_name,
+            process_name="SpacyEntityExtractor",
+            entities=all_entities,
+            processing_time=processing_time,
+            anonymization_applied=not bypass_anonymization
+        )
+
+        # End timing
+        self.statistics_collector.end_timer("text_processing")
+
+    def get_analysis_statistics(self):
+        """Get comprehensive analysis statistics."""
+        return self.statistics_collector.generate_final_statistics()

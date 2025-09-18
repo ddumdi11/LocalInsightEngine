@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from local_insight_engine.main import LocalInsightEngine
 from local_insight_engine.models.analysis import AnalysisResult
 from local_insight_engine import __version__
+from .analysis_report_window import AnalysisReportWindow
 
 logger = logging.getLogger(__name__)
 
@@ -120,6 +121,15 @@ class LocalInsightEngineGUI:
         ttk.Button(btn_frame, text="Show Version", command=self.show_version).grid(
             row=0, column=3
         )
+
+        # Analysis report button (initially hidden)
+        self.analysis_report_button = ttk.Button(
+            actions_frame,
+            text="📊 Analyseprotokoll aufrufen",
+            command=self.show_analysis_report
+        )
+        # Initially hide the button
+        self.analysis_report_button.grid_remove()
 
     def setup_qa_section(self, parent):
         """Setup Q&A section"""
@@ -259,6 +269,9 @@ class LocalInsightEngineGUI:
         """Handle successful analysis completion"""
         self.log_message("✓ Analysis completed successfully!")
         self.ask_button.config(state="normal")
+
+        # Show analysis report button (use row=3 to avoid overlap with re-analyze button)
+        self.analysis_report_button.grid(row=3, column=0, sticky=tk.W, pady=(5, 0))
 
         # Update factual mode UI after analysis
         self._update_factual_mode_ui()
@@ -456,6 +469,26 @@ GUI Features:
 
         # Start re-analysis
         self.run_in_thread(self._analyze_document_bg)
+
+    def show_analysis_report(self):
+        """Show the comprehensive analysis report window"""
+        try:
+            # Get analysis report from engine
+            report = self.engine.get_analysis_report()
+
+            if not report:
+                messagebox.showwarning(
+                    "No Analysis Data",
+                    "No analysis statistics available. Please analyze a document first."
+                )
+                return
+
+            # Create and show analysis report window
+            AnalysisReportWindow(self.root, report)
+
+        except Exception as e:
+            self.log_message(f"✗ Failed to open analysis report: {e}")
+            messagebox.showerror("Report Error", f"Failed to open analysis report:\n{e}")
 
     def run(self):
         """Start the GUI application"""

@@ -22,6 +22,17 @@ Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokument
 - **🧪 Umfassende Tests**: Unit-, Integration- und Multi-Language Tests
 - **⚡ Produktionsreif**: Moderne Python-Architektur mit Code Quality
 
+### 🆕 Neue Enterprise-Features (v0.1.1)
+
+- **🔍 FTS5 Semantic Search**: SQLite-basierte Volltext-Suche mit BM25-Ranking für intelligente Q&A
+- **🗄️ Persistent Q&A Sessions**: Automatische SQLite-Persistierung aller Analyse-Sessions
+- **📊 Enhanced Debug Logging**: Comprehensive Performance-Tracking und detaillierte Analyse-Logs
+- **⚙️ Konfigurationsdatei**: `localinsightengine.conf` für alle System-Einstellungen
+- **🚀 Database Auto-Creation**: Automatische SQLite-DB-Erstellung mit WAL-Mode und FTS5-Support
+- **🎯 Smart Q&A System**: Multi-Layer Search (FTS5 → Keyword → Fallback) mit Context-Awareness
+- **📈 Performance Monitoring**: Detaillierte Metriken für Document Loading, Processing und LLM Analysis
+- **🔄 Robust Fallback Systems**: Graceful Degradation bei Database/FTS5-Fehlern
+
 ## 🏛️ Architektur
 
 ### Layer 1: Daten-Layer (`data_layer`)
@@ -40,6 +51,19 @@ Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokument
 - **Robuste JSON-Parsing**: Automatische Fallback-Mechanismen
 - **Strukturierte Outputs**: Erkenntnisse, Fragen, Zusammenfassungen
 - **Mock-Modus**: Funktioniert auch ohne API-Key für Tests
+
+### 🆕 Persistence Layer (`persistence`)
+- **SQLite Database**: Automatische Erstellung mit WAL-Mode für Concurrency
+- **FTS5 Full-Text Search**: BM25-Ranking mit Time-Decay für semantische Suche
+- **Q&A Session Management**: Vollständige Persistierung aller Analyse-Sessions
+- **Smart Search Engine**: Cross-Session Knowledge Discovery und Related Insights
+- **Repository Pattern**: High-Level CRUD Operations mit Business Logic
+
+### 🆕 Enhanced Logging (`utils`)
+- **Debug Logger**: Performance-Tracking und detaillierte System-Metriken
+- **Konfigurable Log-Pfade**: Projektverzeichnis oder temporärer Ordner
+- **Log Rotation**: 50MB max, 5 Backup-Dateien mit automatischer Cleanup
+- **Dependency Validation**: Automatische Checks aller kritischen Komponenten
 
 ## 🚀 Installation
 
@@ -175,21 +199,93 @@ python tests/test_claude_debug.py
 python tests/test_pdf_processing.py
 ```
 
+## ⚙️ Konfiguration
+
+### localinsightengine.conf (Neu!)
+
+Das System erstellt automatisch eine Konfigurationsdatei `localinsightengine.conf` im Projektverzeichnis mit allen wichtigen Einstellungen:
+
+```ini
+[Logging]
+# Log-Verzeichnis: 'temp' für System-Temp oder absoluter Pfad
+log_directory = .
+log_filename = localinsightengine.log
+log_level = DEBUG
+console_output = true
+max_log_size_mb = 50
+backup_count = 5
+
+[Database]
+# SQLite-Datenbank-Pfad
+database_path = data/qa_sessions.db
+auto_create_db = true
+enable_fts5 = true
+
+[Analysis]
+# Standard-Modus für Sachbuch-Analyse
+default_factual_mode = false
+max_qa_chunks = 100
+enable_semantic_search = true
+
+[Performance]
+# Performance-Logging aktivieren
+enable_performance_logging = true
+log_chunk_details = true
+log_entity_details = true
+```
+
+### 📊 Enhanced Logging
+
+**Automatische Log-Erstellung:**
+- **Log-Datei**: `localinsightengine.log` (konfigurierbar)
+- **Performance-Tracking**: Detaillierte Metriken für alle Operationen
+- **Debug-Informationen**: Chunk-Details, Entity-Extraktion, Q&A-Sessions
+- **Dependency-Validation**: Automatische Checks aller Komponenten
+
+**Log-Beispiel:**
+```
+2025-09-18 07:26:28 | INFO | LocalInsightEngine | STEP 1: Initializing LocalInsightEngine
+2025-09-18 07:26:28 | INFO | LocalInsightEngine | DATABASE: Database initialized
+2025-09-18 07:26:28 | INFO | LocalInsightEngine | ✅ spaCy model de_core_news_sm: Available
+2025-09-18 07:26:29 | INFO | LocalInsightEngine | PERF END: document_analysis - Duration: 15.234s
+```
+
+### 🗄️ Persistent Database
+
+**Automatische SQLite-Erstellung:**
+- **Datei**: `data/qa_sessions.db` (mit WAL-Mode)
+- **FTS5-Support**: Volltext-Suche mit BM25-Ranking
+- **Session-Management**: Alle Q&A-Sessions persistent gespeichert
+- **Cross-Session Search**: Intelligente Suche über alle Dokumente
+
 ### Programmatische Nutzung
 ```python
 from pathlib import Path
 from local_insight_engine.main import LocalInsightEngine
 
-# Engine initialisieren
+# Engine initialisieren (mit automatischer DB-Erstellung)
 engine = LocalInsightEngine()
 
-# Dokument analysieren
+# Dokument im Standard-Modus analysieren
 results = engine.analyze_document(Path("your-document.pdf"))
 
+# Dokument im Sachbuch-Modus analysieren
+results_factual = engine.analyze_document(Path("scientific-paper.pdf"), factual_mode=True)
+
+# Intelligente Q&A mit FTS5 Semantic Search
+answer = engine.answer_question("Was steht im Text zu Vitamin B3?")
+print(f"Antwort: {answer}")
+
+# Weitere Q&A-Sessions (nutzen automatisch Semantic Search)
+answer2 = engine.answer_question("Welche Nebenwirkungen werden erwähnt?")
+
 # Ergebnisse anzeigen
-print(f"Analysierte {results['chunks']} Chunks")
-print(f"Erkannte {results['entities']} Entitäten")
-print(f"Executive Summary: {results['summary']}")
+print(f"Status: {results['status']}")
+print(f"Erkenntnisse: {len(results.get('insights', []))}")
+print(f"Executive Summary: {results.get('executive_summary', 'N/A')}")
+
+# Performance-Logs werden automatisch geschrieben nach:
+# localinsightengine.log (im Projektverzeichnis)
 ```
 
 ## 📁 Projektstruktur

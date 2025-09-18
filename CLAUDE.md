@@ -4,17 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview: LocalInsightEngine
 
-This is a **LocalInsightEngine** - a sophisticated Python application for copyright-compliant document analysis using large language models. The project implements a 3-layer architecture:
+This is a **LocalInsightEngine** - a sophisticated Python application for copyright-compliant document analysis using large language models. The project implements a 5-layer enterprise architecture:
 
 1. **Layer 1 (data_layer)**: PDF/EPUB/DOCX parsing with precise location mapping
-2. **Layer 2 (processing_hub)**: Text processing, NER, and content neutralization  
+2. **Layer 2 (processing_hub)**: Text processing, NER, and content neutralization
 3. **Layer 3 (analysis_engine)**: LLM-based analysis of neutralized content
+4. **Layer 4 (persistence)**: SQLite database with FTS5 semantic search
+5. **Layer 5 (utils)**: Enhanced logging, configuration, and performance monitoring
 
 **Key Constraint: Copyright Compliance** - Original text must NEVER be sent to external APIs. Only neutralized, processed content is transmitted.
 
 The project uses industry-standard tools and follows best practices for scalable application development.
 
 ## RESOLVED ISSUES ✅
+
+### ✅ ENTERPRISE-GRADE PERSISTENCE & FTS5 SEARCH (September 2025)
+**Status:** NEW MAJOR FEATURE - Complete persistence architecture with semantic search ✅
+**Solution:** Full SQLite-based persistence layer with FTS5 full-text search for intelligent Q&A
+- Implemented automatic SQLite database creation with WAL-Mode for concurrency
+- Added FTS5 semantic search engine with BM25 ranking and time-decay weighting
+- Created comprehensive Q&A session management with cross-document knowledge discovery
+- Enhanced logging system with performance tracking and detailed debugging
+- **Result:** Semantic search resolves "Nikotinamid" → "Niacin" → "Vitamin B3" connections
+
+**Technical Implementation:**
+- `persistence/database_manager.py`: SQLite database management with automatic schema creation
+- `persistence/repositories/session_repository.py`: FTS5-powered semantic search with BM25 ranking
+- `utils/debug_logger.py`: Enhanced logging system based on VidScalerSubtitleAdder patterns
+- `main.py`: Integrated DatabaseManager into LocalInsightEngine with persistent Q&A
+- `localinsightengine.conf`: Comprehensive configuration file for all system settings
+
+**Benefits:**
+- 🔍 **Semantic Search**: "Nikotinamid" finds "Niacin", "Vitamin B3" content automatically
+- 🗄️ **Persistent Sessions**: All Q&A exchanges stored and searchable across documents
+- 📈 **Performance Monitoring**: Detailed metrics for document loading, processing, and analysis
+- 🔄 **Cross-Session Knowledge**: Intelligent search across all previously analyzed documents
+- ⚙️ **Enterprise Configuration**: Comprehensive settings management via INI files
 
 ### ✅ SACHBUCH-MODUS IMPLEMENTED (September 2025)
 **Status:** NEW FEATURE - Factual content bypass with intelligent UX ✅
@@ -62,6 +87,35 @@ The project uses industry-standard tools and follows best practices for scalable
 
 ## LocalInsightEngine Specific Commands
 
+### Enterprise System Testing
+
+#### Database & Persistence Testing
+```bash
+# Database Health Check (inside activated .venv)
+python -c "from local_insight_engine.persistence import get_database_manager; dm = get_database_manager(); print('DB Health:', dm.health_check())"
+
+# FTS5 Search Testing
+python -c "from local_insight_engine.persistence.repositories import SessionRepository; from local_insight_engine.persistence import get_database_manager; repo = SessionRepository(get_database_manager().get_session()); print('FTS5 available:', repo._check_fts5_available())"
+
+# Clean Database Reset (for Development)
+rm -f data/qa_sessions.db  # Caution: Deletes all Q&A Sessions!
+```
+
+#### Performance & Logging Analysis
+```bash
+# Real-Time Log Analysis
+tail -f localinsightengine.log
+
+# Extract Performance Metrics
+grep "PERF END" localinsightengine.log | tail -10
+
+# Database Operations Analysis
+grep "DATABASE:" localinsightengine.log
+
+# FTS5 Search Operations Tracking
+grep "FTS5" localinsightengine.log
+```
+
 ### Quick Testing
 
 **Outside virtual environment (.venv deactivated):**
@@ -94,22 +148,59 @@ The project uses industry-standard tools and follows best practices for scalable
 - `python -m spacy download en_core_web_sm` - Download English NER model (optional)  
 - `python -m spacy info` - Show installed spaCy models
 
-### Running the Engine
+### Running the Enhanced Engine with Persistence
 ```python
+from pathlib import Path
 from local_insight_engine.main import LocalInsightEngine
+
+# Engine initialisieren (mit automatischer DB-Erstellung)
 engine = LocalInsightEngine()
+
+# Dokument analysieren (wird automatisch in SQLite persistiert)
 results = engine.analyze_document(Path("document.pdf"))
+
+# Intelligente Q&A mit FTS5 Semantic Search
+answer = engine.answer_question("Was steht im Text zu Nikotinamid?")
+# → Findet automatisch "Niacin", "Vitamin B3" via FTS5 search
+
+# Weitere Q&A-Sessions (nutzen Cross-Session Knowledge)
+answer2 = engine.answer_question("Welche Nebenwirkungen werden erwähnt?")
+
+# Performance-Logs werden automatisch geschrieben nach:
+# localinsightengine.log (im Projektverzeichnis)
+```
+
+### Database & FTS5 Management
 ```python
+# Database Health Check
+from local_insight_engine.persistence import get_database_manager
+dm = get_database_manager()
+print(f"Database Health: {dm.health_check()}")
+
+# FTS5 Search Testing
+from local_insight_engine.persistence.repositories import SessionRepository
+repo = SessionRepository(dm.get_session())
+search_results = repo.search_qa_content(
+    query="Nikotinamid Vitamin B3",
+    limit=10,
+    time_decay_weight=0.2
+)
+print(f"Found {len(search_results)} semantic matches")
+```
 
 ### Key Architecture Rules
 1. **Never modify Layer 1** to send original text externally
-2. **Always neutralize in Layer 2** before sending to Layer 3  
+2. **Always neutralize in Layer 2** before sending to Layer 3
 3. **Test copyright compliance** - no original text should appear in Layer 3 calls
 4. **Use type hints** throughout - this is a typed Python project
-5. **Follow the 3-layer pattern** - don't bypass layers
+5. **Follow the 5-layer pattern** - don't bypass layers, use persistence for Q&A
 6. **File Type Validation** - system detects actual content type vs extension
 7. **Multi-Format Support** - TXT preferred over PDF for better quality
 8. **Claude-4 Integration** - uses latest model: claude-sonnet-4-20250514
+9. **FTS5 Semantic Search** - always use semantic search for Q&A, not keyword matching
+10. **Database Persistence** - ensure all Q&A sessions are stored for cross-session knowledge
+11. **Enhanced Logging** - use performance tracking and detailed debugging for all operations
+12. **Configuration Management** - use localinsightengine.conf for system settings
 
 ## Development Commands
 
@@ -200,6 +291,15 @@ results = engine.analyze_document(Path("document.pdf"))
 - **Python** - Primary programming language (3.8+)
 - **pip** - Package management
 - **venv** - Virtual environment management
+
+### LocalInsightEngine Specific Stack
+- **SQLite** - Database with WAL-Mode for concurrency
+- **FTS5** - Full-text search with BM25 ranking
+- **SQLAlchemy** - SQL toolkit and ORM for database operations
+- **Pydantic** - Data validation using Python type hints
+- **spaCy** - NLP and Named Entity Recognition (German & English)
+- **Anthropic Claude-4** - Large language model for analysis
+- **ConfigParser** - INI-based configuration management
 
 ### Common Frameworks
 - **Django** - High-level web framework
@@ -443,8 +543,13 @@ src/
 4. Format code with Black before committing
 
 ### Before Committing (inside activated .venv)
-1. Run full test suite: `python -m pytest`
-2. Check code formatting: `python -m black --check .`
-3. Sort imports: `python -m isort --check-only .`
-4. Run linting: `python -m flake8`
-5. Run type checking: `python -m mypy .`
+1. **Check Database Health**: `python -c "from local_insight_engine.persistence import get_database_manager; print('DB Health:', get_database_manager().health_check())"`
+2. **Run Enhanced Test Suite**: `python -m pytest -v --tb=short`
+3. **Check FTS5 Functionality**: `python -c "from local_insight_engine.persistence.repositories import SessionRepository; from local_insight_engine.persistence import get_database_manager; print('FTS5:', SessionRepository(get_database_manager().get_session())._check_fts5_available())"`
+4. **Code Quality Checks**:
+   - Check code formatting: `python -m black --check .`
+   - Sort imports: `python -m isort --check-only .`
+   - Run linting: `python -m flake8`
+   - Run type checking: `python -m mypy .`
+5. **Performance Log Analysis**: `grep "PERF END" localinsightengine.log | tail -5`
+6. **Configuration Validation**: Ensure `localinsightengine.conf` has proper settings

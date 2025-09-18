@@ -30,7 +30,7 @@ class SpacyEntityExtractor:
         # spaCy to our label mapping
         self.label_mapping = {
             'PER': 'PERSON',
-            'PERSON': 'PERSON',  
+            'PERSON': 'PERSON',
             'ORG': 'ORG',
             'LOC': 'LOC',
             'GPE': 'LOC',  # Geopolitical entity -> Location
@@ -39,7 +39,10 @@ class SpacyEntityExtractor:
             'TIME': 'TIME',
             'MONEY': 'MONEY',
             'PERCENT': 'PERCENT',
-            'QUANTITY': 'QUANTITY'
+            'QUANTITY': 'QUANTITY',
+            # Custom labels for health and nutrition
+            'NUTRIENT': 'NUTRIENT',
+            'NEUROCHEMICAL': 'NEUROCHEMICAL'
         }
         
         # Minimum confidence threshold (lower for testing)
@@ -59,19 +62,82 @@ class SpacyEntityExtractor:
         }
     
     def _load_models(self):
-        """Load spaCy language models."""
+        """Load spaCy language models and add custom entity patterns."""
         try:
             self.german_nlp = spacy.load('de_core_news_sm')
             logger.info("German model loaded successfully")
+
+            # Add custom entity patterns for vitamins, nutrients, and health terms
+            self._add_custom_entity_patterns()
+
         except Exception as e:
             logger.warning(f"Could not load German model: {e}")
             logger.info("Falling back to German language class without NER")
             self.german_nlp = German()
-        
+
         # For now, focus on German only
         logger.info("Using German-only processing for entities")
         self.english_nlp = None
-    
+
+    def _add_custom_entity_patterns(self):
+        """Add custom entity patterns for vitamins, nutrients, and health terms."""
+        if self.german_nlp is None:
+            return
+
+        # Add EntityRuler to the pipeline if not already present
+        if "entity_ruler" not in self.german_nlp.pipe_names:
+            ruler = self.german_nlp.add_pipe("entity_ruler", before="ner")
+        else:
+            ruler = self.german_nlp.get_pipe("entity_ruler")
+
+        # Define custom patterns for health and nutrition entities
+        patterns = [
+            # Vitamins - exact matches
+            {"label": "NUTRIENT", "pattern": "Vitamin A"}, {"label": "NUTRIENT", "pattern": "Vitamin B1"},
+            {"label": "NUTRIENT", "pattern": "Vitamin B2"}, {"label": "NUTRIENT", "pattern": "Vitamin B3"},
+            {"label": "NUTRIENT", "pattern": "Vitamin B5"}, {"label": "NUTRIENT", "pattern": "Vitamin B6"},
+            {"label": "NUTRIENT", "pattern": "Vitamin B7"}, {"label": "NUTRIENT", "pattern": "Vitamin B9"},
+            {"label": "NUTRIENT", "pattern": "Vitamin B12"}, {"label": "NUTRIENT", "pattern": "Vitamin C"},
+            {"label": "NUTRIENT", "pattern": "Vitamin D"}, {"label": "NUTRIENT", "pattern": "Vitamin D3"},
+            {"label": "NUTRIENT", "pattern": "Vitamin E"}, {"label": "NUTRIENT", "pattern": "Vitamin K"},
+
+            # B-Vitamin names and synonyms
+            {"label": "NUTRIENT", "pattern": "Thiamin"}, {"label": "NUTRIENT", "pattern": "Riboflavin"},
+            {"label": "NUTRIENT", "pattern": "Niacin"}, {"label": "NUTRIENT", "pattern": "Nikotinamid"},
+            {"label": "NUTRIENT", "pattern": "Pantothensäure"}, {"label": "NUTRIENT", "pattern": "Pyridoxin"},
+            {"label": "NUTRIENT", "pattern": "Biotin"}, {"label": "NUTRIENT", "pattern": "Folsäure"},
+            {"label": "NUTRIENT", "pattern": "Folat"}, {"label": "NUTRIENT", "pattern": "Cobalamin"},
+
+            # Minerals and trace elements
+            {"label": "NUTRIENT", "pattern": "Magnesium"}, {"label": "NUTRIENT", "pattern": "Calcium"},
+            {"label": "NUTRIENT", "pattern": "Eisen"}, {"label": "NUTRIENT", "pattern": "Zink"},
+            {"label": "NUTRIENT", "pattern": "Selen"}, {"label": "NUTRIENT", "pattern": "Jod"},
+            {"label": "NUTRIENT", "pattern": "Kalium"}, {"label": "NUTRIENT", "pattern": "Natrium"},
+            {"label": "NUTRIENT", "pattern": "Phosphor"}, {"label": "NUTRIENT", "pattern": "Mangan"},
+            {"label": "NUTRIENT", "pattern": "Kupfer"}, {"label": "NUTRIENT", "pattern": "Chrom"},
+
+            # Neurotransmitters and brain chemicals
+            {"label": "NEUROCHEMICAL", "pattern": "Dopamin"}, {"label": "NEUROCHEMICAL", "pattern": "Serotonin"},
+            {"label": "NEUROCHEMICAL", "pattern": "GABA"}, {"label": "NEUROCHEMICAL", "pattern": "Noradrenalin"},
+            {"label": "NEUROCHEMICAL", "pattern": "Acetylcholin"}, {"label": "NEUROCHEMICAL", "pattern": "Glycin"},
+
+            # Amino acids and compounds
+            {"label": "NUTRIENT", "pattern": "Tryptophan"}, {"label": "NUTRIENT", "pattern": "Tyrosin"},
+            {"label": "NUTRIENT", "pattern": "Phenylalanin"}, {"label": "NUTRIENT", "pattern": "Methionin"},
+            {"label": "NUTRIENT", "pattern": "Lysin"}, {"label": "NUTRIENT", "pattern": "Leucin"},
+            {"label": "NUTRIENT", "pattern": "Phosphatidylserin"}, {"label": "NUTRIENT", "pattern": "Phosphatidylcholin"},
+
+            # Generic nutrition terms
+            {"label": "NUTRIENT", "pattern": "Nährstoffe"}, {"label": "NUTRIENT", "pattern": "Spurenelemente"},
+            {"label": "NUTRIENT", "pattern": "Mineralstoffe"}, {"label": "NUTRIENT", "pattern": "Aminosäuren"},
+            {"label": "NUTRIENT", "pattern": "Antioxidantien"}, {"label": "NUTRIENT", "pattern": "Omega-3"},
+            {"label": "NUTRIENT", "pattern": "Omega-6"}, {"label": "NUTRIENT", "pattern": "Fettsäuren"},
+        ]
+
+        # Add all patterns to the ruler
+        ruler.add_patterns(patterns)
+        logger.info(f"Added {len(patterns)} custom entity patterns for vitamins and nutrients")
+
     def extract_entities(self, text: str, source_paragraphs: List[int], source_pages: List[int], bypass_anonymization: bool = False) -> List[EntityData]:
         """
         Extract named entities using spaCy.

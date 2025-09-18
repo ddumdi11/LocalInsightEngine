@@ -1,13 +1,27 @@
-# LocalInsightEngine 🚀
+# LocalInsightEngine 🚀 - Developer Documentation
 
-**Intelligente, urheberrechtskonforme Analyse von Sachbüchern und Dokumenten**
+**Enterprise-Ready Document Analysis with FTS5 Semantic Search**
 
-Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokumenten mit Hilfe großer Sprachmodelle, ohne dabei urheberrechtlich geschützte Inhalte zu übertragen.
+Vollständig funktionsfähige Python-Anwendung zur copyright-compliant Dokumentenanalyse mit modernster FTS5-Volltextsuche und persistenter Q&A-Session-Verwaltung.
 
-## ✨ Features
+## 🆕 Version 0.1.1 - Enterprise Features
 
-- **🔒 Urheberrechtskonform**: Niemals Originaltext an externe APIs
-- **🏗️ 3-Layer-Architektur**: Saubere Trennung von Datenverarbeitung und Analyse  
+### 🚀 Neue Architektur-Komponenten
+
+- **🔍 FTS5 Semantic Search Engine**: SQLite-basierte Volltext-Suche mit BM25-Ranking
+- **🗄️ Persistent Q&A Sessions**: Automatische SQLite-Persistierung aller Analyse-Sessions
+- **📊 Enhanced Debug Logging**: Comprehensive Performance-Tracking und detaillierte Analyse-Logs
+- **⚙️ Konfigurationssystem**: `localinsightengine.conf` für alle System-Einstellungen
+- **🚀 Database Auto-Creation**: Automatische SQLite-DB-Erstellung mit WAL-Mode
+- **🎯 Smart Q&A System**: Multi-Layer Search (FTS5 → Keyword → Fallback)
+- **📈 Performance Monitoring**: Detaillierte Metriken für alle Operationen
+- **🔄 Robust Fallback Systems**: Graceful Degradation bei Database/FTS5-Fehlern
+
+### ✨ Core Features
+
+- **📖 Sachbuch-Modus**: Bypass für faktische Inhalte - keine Anonymisierung wissenschaftlicher Begriffe
+- **🔒 Urheberrechtskonform**: Niemals Originaltext an externe APIs (außer im bewusst gewählten Sachbuch-Modus)
+- **🏗️ 5-Layer-Architektur**: Erweitert um Persistence und Utils Layer
 - **🇩🇪 Deutsche & Englische NLP**: spaCy-basierte Named Entity Recognition
 - **🤖 Claude-4 Integration**: Modernste KI-Analyse mit intelligenten Insights
 - **📁 Multi-Format Support**: PDF, TXT, EPUB, DOCX mit automatischer Erkennung
@@ -34,6 +48,21 @@ Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokument
 - **Robuste JSON-Parsing**: Automatische Fallback-Mechanismen
 - **Strukturierte Outputs**: Erkenntnisse, Fragen, Zusammenfassungen
 - **Mock-Modus**: Funktioniert auch ohne API-Key für Tests
+
+### Layer 4: Persistence-Layer (`persistence`)
+- **SQLite Database Management**: Automatische Erstellung mit WAL-Mode für Concurrency
+- **FTS5 Full-Text Search**: BM25-Ranking mit Time-Decay für semantische Suche
+- **Q&A Session Repository**: Vollständige Persistierung aller Analyse-Sessions
+- **Database Schema Migration**: Automatisches Setup der Tabellen und Indizes
+- **Cross-Session Knowledge**: Smart Search Engine für dokumentübergreifende Insights
+- **Repository Pattern**: High-Level CRUD Operations mit Business Logic
+
+### Layer 5: Utils-Layer (`utils`)
+- **Enhanced Debug Logger**: Performance-Tracking und detaillierte System-Metriken
+- **Konfigurationssystem**: INI-basierte Settings mit Fallback-Defaults
+- **Dependency Validation**: Automatische Checks aller kritischen Komponenten
+- **Log Rotation Management**: 50MB max, 5 Backup-Dateien mit automatischer Cleanup
+- **Performance Monitoring**: Detaillierte Metriken für Document Loading, Processing und LLM Analysis
 
 ## 🚀 Installation
 
@@ -164,6 +193,35 @@ Das Dokument behandelt komplexe philosophische Konzepte...
 
 ## 🛠️ Entwicklung
 
+### Enhanced Development Workflow
+
+#### Database & Persistence Testing
+```bash
+# Database Health Check (innerhalb aktivierter venv)
+python -c "from local_insight_engine.persistence import get_database_manager; dm = get_database_manager(); print('DB Health:', dm.health_check())"
+
+# FTS5 Search Testing
+python -c "from local_insight_engine.persistence.repositories import SessionRepository; from local_insight_engine.persistence import get_database_manager; repo = SessionRepository(get_database_manager().get_session()); print('FTS5 available:', repo._check_fts5_available())"
+
+# Clean Database Reset (für Development)
+rm -f data/qa_sessions.db  # Vorsicht: Löscht alle Q&A Sessions!
+```
+
+#### Performance & Logging Analysis
+```bash
+# Log-Analyse (Real-Time)
+tail -f localinsightengine.log
+
+# Performance-Metriken extrahieren
+grep "PERF END" localinsightengine.log | tail -10
+
+# Database-Operations analysieren
+grep "DATABASE:" localinsightengine.log
+
+# FTS5-Search-Operationen verfolgen
+grep "FTS5" localinsightengine.log
+```
+
 ### Code-Qualität prüfen (innerhalb aktivierter venv)
 ```bash
 # Formatierung
@@ -180,13 +238,19 @@ python -m mypy .
 
 ### Tests ausführen (innerhalb aktivierter venv)
 ```bash
-# Alle Tests
-python -m pytest
+# Alle Tests mit Enhanced Logging
+python -m pytest -v --tb=short
 
-# Mit Coverage
-python -m pytest --cov --cov-report=html
+# Mit Coverage und HTML Report
+python -m pytest --cov=src --cov-report=html --cov-report=term-missing
 
-# Schneller Test
+# Database Integration Tests
+python -m pytest tests/ -k "database or persistence" -v
+
+# FTS5 Search Tests
+python -m pytest tests/ -k "fts5 or search" -v
+
+# Schneller Test mit Enhanced Features
 python test_pdf_processing.py
 ```
 
@@ -196,40 +260,86 @@ python test_pdf_processing.py
 LocalInsightEngine/
 ├── src/local_insight_engine/
 │   ├── __init__.py
-│   ├── main.py                    # Haupt-API
+│   ├── main.py                    # Haupt-API mit FTS5 Integration
 │   ├── config/
-│   │   ├── settings.py           # Konfiguration
+│   │   ├── settings.py           # Konfigurationssystem
 │   ├── models/                   # Datenmodelle
 │   │   ├── document.py          # PDF/Document models
 │   │   ├── text_data.py         # Text processing models
-│   │   └── analysis.py          # Analysis result models
-│   └── services/                 # Business Logic
-│       ├── data_layer/          # Layer 1: PDF/Document loading
-│       ├── processing_hub/      # Layer 2: Text processing & NER
-│       └── analysis_engine/     # Layer 3: Claude API integration
-├── tests/                        # Test suite
-├── requirements.txt              # Production dependencies
-├── requirements-dev.txt          # Development dependencies
-├── test_pdf_processing.py       # Quick integration test
-├── CLAUDE.md                    # Claude Code development guide
-└── README.md                    # This file
+│   │   ├── analysis.py          # Analysis result models
+│   │   └── qa_models.py         # Q&A Session models (SQLite)
+│   ├── services/                 # Business Logic
+│   │   ├── data_layer/          # Layer 1: PDF/Document loading
+│   │   ├── processing_hub/      # Layer 2: Text processing & NER
+│   │   └── analysis_engine/     # Layer 3: Claude API integration
+│   ├── persistence/              # Layer 4: Database & FTS5
+│   │   ├── __init__.py
+│   │   ├── database_manager.py  # SQLite DB Management
+│   │   ├── repositories/        # Repository Pattern
+│   │   └── models.py           # SQLAlchemy Models
+│   └── utils/                   # Layer 5: Logging & Config
+│       ├── __init__.py
+│       └── debug_logger.py     # Enhanced Logging System
+├── data/                        # SQLite Database Storage
+│   └── qa_sessions.db          # FTS5-enabled Database
+├── tests/                       # Test suite
+├── requirements.txt             # Production dependencies
+├── requirements-dev.txt         # Development dependencies
+├── localinsightengine.conf     # System Configuration
+├── localinsightengine.log      # Enhanced Debug Logs
+├── test_pdf_processing.py      # Quick integration test
+├── CLAUDE.md                   # Claude Code development guide
+└── README.md                   # User documentation
 ```
 
 ## 🔧 Konfiguration
 
-Die Anwendung kann über Umgebungsvariablen oder eine `.env`-Datei konfiguriert werden:
+### Enhanced Configuration System (localinsightengine.conf)
+
+Das System erstellt automatisch eine umfassende Konfigurationsdatei mit allen Enterprise-Einstellungen:
+
+```ini
+[Logging]
+# Enhanced Debug Logging System
+log_directory = .                    # 'temp' für System-Temp oder absoluter Pfad
+log_filename = localinsightengine.log
+log_level = DEBUG                    # DEBUG, INFO, WARNING, ERROR
+console_output = true                # Zusätzliche Konsolen-Ausgabe
+max_log_size_mb = 50                # Log-Rotation bei 50MB
+backup_count = 5                     # 5 Backup-Dateien behalten
+
+[Database]
+# SQLite Database mit FTS5 Support
+database_path = data/qa_sessions.db  # Automatische Verzeichnis-Erstellung
+auto_create_db = true                # DB Auto-Creation mit Schema
+enable_fts5 = true                   # FTS5 Full-Text Search aktivieren
+
+[Analysis]
+# Smart Q&A und Analyse-Einstellungen
+default_factual_mode = false        # Standard-Modus für Sachbuch-Analyse
+max_qa_chunks = 100                  # Max. Chunks für Q&A Kontext
+enable_semantic_search = true       # FTS5 Semantic Search aktivieren
+
+[Performance]
+# Performance-Monitoring und Debugging
+enable_performance_logging = true   # Detaillierte Performance-Metriken
+log_chunk_details = true            # Chunk-Processing Details loggen
+log_entity_details = true           # Entity-Extraktion Details loggen
+```
+
+### Umgebungsvariablen (.env Support)
 
 ```bash
-# Claude API
-LLM_API_KEY=your-api-key-here
-LLM_MODEL=claude-3-sonnet-20240229
+# Claude API (weiterhin unterstützt)
+LLM_API_KEY=your-claude-api-key
+LLM_MODEL=claude-sonnet-4-20250514
 
-# Text Processing
+# Legacy Text Processing
 CHUNK_SIZE=1000
 CHUNK_OVERLAP=200
 SPACY_MODEL=de_core_news_sm
 
-# Directories
+# Directories (optional, da auto-creation)
 DATA_DIR=~/.local_insight_engine
 CACHE_DIR=~/.local_insight_engine/cache
 
@@ -241,36 +351,52 @@ MAX_API_REQUESTS=20
 ## 📋 Roadmap
 
 ### ✅ Abgeschlossen (v0.1.1)
-- [x] Vollständige 3-Layer-Architektur
-- [x] PDF/EPUB/DOCX-Parser mit Mapping
-- [x] spaCy-Integration (Deutsch + Englisch)
-- [x] Claude API-Client
-- [x] Statement-Neutralisierung
-- [x] Komplette Test-Pipeline
+- [x] **Erweiterte 5-Layer-Architektur** (Data, Processing, Analysis, Persistence, Utils)
+- [x] **FTS5 Semantic Search Engine**: SQLite-basierte Volltext-Suche mit BM25-Ranking
+- [x] **Persistent Q&A Sessions**: Automatische SQLite-Persistierung aller Analyse-Sessions
+- [x] **Enhanced Debug Logging**: Performance-Tracking und detaillierte Analyse-Logs
+- [x] **Konfigurationssystem**: `localinsightengine.conf` für alle System-Einstellungen
+- [x] **Database Auto-Creation**: Automatische SQLite-DB-Erstellung mit WAL-Mode
+- [x] **Smart Q&A System**: Multi-Layer Search (FTS5 → Keyword → Fallback)
+- [x] **Performance Monitoring**: Detaillierte Metriken für alle Operationen
+- [x] **Robust Fallback Systems**: Graceful Degradation bei Database/FTS5-Fehlern
+- [x] PDF/EPUB/DOCX-Parser mit präzisem Mapping
+- [x] spaCy-Integration (Deutsch + Englisch) mit intelligenter Entity-Neutralisierung
+- [x] Claude-4 API-Client mit modernsten Modellen
+- [x] Statement-Neutralisierung für Copyright-Compliance
+- [x] Komplette Test-Pipeline mit Unit- und Integrationstests
 - [x] **JSON Export-Funktionalität** (CLI, Start.bat, programmatisch)
 - [x] **Export Unit-Tests** mit Anonymization Proof Tests
 - [x] **Copyright-Compliance** (✅ All canary tests passing - anonymization working)
+- [x] **Sachbuch-Modus**: Bypass für faktische Inhalte ohne Anonymisierung wissenschaftlicher Begriffe
 
 ### 🚧 Geplant (v0.2.0)
 - [x] **Anonymization Issues Fixed** (✅ Intelligent entity neutralization implemented)
-- [ ] **Persistent QA System** - Interactive document analysis with session memory
-  - [ ] Knowledge graph persistence across sessions
-  - [ ] Context-aware question answering
-  - [ ] Incremental learning from user interactions
-  - [ ] Bookmark and annotation system
+- [x] **Persistent QA System** - Interactive document analysis with session memory (✅ FTS5-based)
+- [x] **Cross-session Knowledge Discovery** (✅ SQLite mit FTS5 Full-Text Search)
+- [x] **Context-aware Question Answering** (✅ Multi-Layer Search mit Semantic Ranking)
+- [ ] **Knowledge Graph Persistence** - Enhanced entity relationship mapping
+- [ ] **Incremental Learning** from user interactions
+- [ ] **Bookmark and Annotation System** - User-driven content organization
+- [ ] **Analysis Result Persistification** - Full document analysis storage in SQLite
+- [ ] **Pydantic Validation Improvements** - Enhanced error handling for AnalysisResult
 - [ ] Add file-type detection warnings for fake PDFs
 - [ ] CSV/PDF Export-Formate
 - [ ] Web-Interface (FastAPI + React)
 - [ ] Batch-Processing für multiple Dokumente
 - [ ] Erweiterte Visualisierungen
-- [ ] Verbessertes Caching
+- [ ] Advanced Caching mit Redis Support
 
 ### 🔮 Zukunft (v1.0.0)
-- [ ] Graphische Benutzeroberfläche
-- [ ] Database-Backend für große Dokumente
-- [ ] Multi-Language Support
-- [ ] Collaborative Analysis Features
-- [ ] Enterprise-Deployment-Optionen
+- [ ] **Advanced GUI Interface** mit Real-Time Q&A Dashboard
+- [ ] **Distributed Database Backend** für enterprise-scale Dokumente
+- [ ] **Extended Multi-Language Support** (Spanisch, Französisch, Italienisch)
+- [ ] **Collaborative Analysis Features** mit Team-Sharing
+- [ ] **Enterprise-Deployment-Optionen** (Docker, Kubernetes, Cloud)
+- [ ] **Advanced Analytics Dashboard** mit Performance-Insights
+- [ ] **Machine Learning Pipeline** für automatische Content-Classification
+- [ ] **API Gateway** für externe System-Integration
+- [ ] **Advanced Security Features** (OAuth, Role-Based Access Control)
 
 ## 🤝 Beitragen
 
