@@ -596,29 +596,40 @@ class StreamingDocumentLoader:
         """Stream large text files in chunks."""
         logger.info(f"Streaming large text file: {file_path.name}")
 
-        text_parts = []
+        text_parts: List[str] = []
         paragraph_mapping = {}
         paragraph_counter = 0
         total_length = 0
+        remainder = ""
 
         with open(file_path, 'r', encoding='utf-8') as f:
             while True:
-                chunk = f.read(self.chunk_size)
-                if not chunk:
+                chunk_raw = f.read(self.chunk_size)
+                if not chunk_raw:
                     break
 
-                # Process paragraphs in chunk
-                paragraphs = re.split(r'\n\s*\n', chunk)
-
-                for para in paragraphs:
+                chunk = remainder + chunk_raw
+                parts = re.split(r'\n\s*\n', chunk)
+                complete, remainder = parts[:-1], parts[-1]
+                for para in complete:
                     if para.strip():
                         para_start = total_length
-                        text_parts.append(para.strip() + "\n\n")
-                        para_end = total_length + len(text_parts[-1])
-
+                        cleaned = para.strip() + "\n\n"
+                        text_parts.append(cleaned)
+                        para_end = total_length + len(cleaned)
                         paragraph_mapping[paragraph_counter] = (para_start, para_end)
                         paragraph_counter += 1
                         total_length = para_end
+
+        # Flush remainder
+        if remainder.strip():
+            para_start = total_length
+            cleaned = remainder.strip() + "\n\n"
+            text_parts.append(cleaned)
+            para_end = total_length + len(cleaned)
+            paragraph_mapping[paragraph_counter] = (para_start, para_end)
+            paragraph_counter += 1
+            total_length = para_end
 
         content = ''.join(text_parts)
 
