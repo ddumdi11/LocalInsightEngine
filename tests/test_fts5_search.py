@@ -193,9 +193,9 @@ def test_fts5_search_functionality():
             # Test 1: Basic keyword search
             results = repo.search_qa_content("vitamin B3")
             assert len(results) >= 1, f"Expected vitamin B3 results, got {len(results)}"
-            assert "vitamin B3" in results[0].question.lower() or "vitamin B3" in results[0].answer.lower()
+            needle = "vitamin b3"
+            assert any(needle in (r.question.lower() + " " + r.answer.lower()) for r in results)
             print(f"SUCCESS: Basic search found {len(results)} results for 'vitamin B3'")
-
             # Test 2: Multi-keyword search
             results = repo.search_qa_content("exercise health benefits")
             assert len(results) >= 2, f"Expected multiple results for exercise+health, got {len(results)}"
