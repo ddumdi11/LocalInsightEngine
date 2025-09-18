@@ -194,35 +194,32 @@ class TextProcessor:
         return "\n".join(neutralized_parts)
 
     def _create_neutral_summary(self, text: str, entities: List[EntityData]) -> str:
-        """Create a factual summary that replaces specific details with generic terms."""
+        """Create a factual summary that replaces specific details with generic placeholders."""
         import re
+        placeholders = {
+            'PERSON': '[PERSON]',
+            'ORG': '[ORGANIZATION]',
+            'LOC': '[LOCATION]',
+        }
+        spans = []
+        for e in entities:
+            if e.start_char is None or e.end_char is None:
+                continue
+            if e.label in placeholders:
+                spans.append((e.start_char, e.end_char, placeholders[e.label]))
+            elif e.label == 'MISC' and e.text and len(e.text) > 10:
+                spans.append((e.start_char, e.end_char, '[TERM]'))
+        spans.sort(key=lambda s: s[0], reverse=True)
 
-        # Start with the original text
         neutral_text = text
+        for s, e, repl in spans:
+            if 0 <= s < e <= len(neutral_text):
+                neutral_text = neutral_text[:s] + repl + neutral_text[e:]
 
-        # Replace specific entities with generic placeholders
-        for entity in entities:
-            if entity.text and len(entity.text) > 2:
-                if entity.label == 'PERSON':
-                    neutral_text = neutral_text.replace(entity.text, '[PERSON]')
-                elif entity.label == 'ORG':
-                    neutral_text = neutral_text.replace(entity.text, '[ORGANIZATION]')
-                elif entity.label == 'LOC':
-                    neutral_text = neutral_text.replace(entity.text, '[LOCATION]')
-                elif entity.label == 'MISC':
-                    # Keep some MISC entities as they might be technical terms
-                    if len(entity.text) > 10:  # Only replace long misc entities
-                        neutral_text = neutral_text.replace(entity.text, '[TERM]')
-
-        # Clean up repeated placeholders
-        neutral_text = re.sub(r'\[PERSON\](\s*\[PERSON\])+', '[PERSONS]', neutral_text)
-        neutral_text = re.sub(r'\[ORGANIZATION\](\s*\[ORGANIZATION\])+', '[ORGANIZATIONS]', neutral_text)
-
-        # Remove very short segments (less than 20 chars)
-        if len(neutral_text.strip()) < 20:
-            return ""
-
-        return neutral_text.strip()
+        neutral_text = re.sub(r'(?:\[(PERSON|ORGANIZATION|LOCATION|TERM)\]\s*){2,}',
+                              lambda m: f'[{m.group(1)}S] ', neutral_text)
+        neutral_text = re.sub(r'\s{2,}', ' ', neutral_text).strip()
+        return neutral_text if len(neutral_text) >= 20 else ""
     
     def _find_source_paragraphs(self, start: int, end: int, paragraph_mapping: Dict) -> List[int]:
         """Find which paragraphs a text range spans."""
