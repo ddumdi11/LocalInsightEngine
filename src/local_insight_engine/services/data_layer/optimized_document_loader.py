@@ -415,29 +415,30 @@ class StreamingDocumentLoader:
     def _load_pdf_pypdf2_standard(self, file_path: Path, reader) -> Document:
         """Standard optimized PyPDF2 processing."""
         # Use list accumulation instead of string concatenation
-        text_parts = []
+        text_parts: List[str] = []
         page_mapping = {}
         paragraph_mapping = {}
         paragraph_counter = 0
+        current_len = 0
 
         for page_num, page in enumerate(reader.pages, 1):
-            page_start = sum(len(part) for part in text_parts)
-            page_text = page.extract_text()
+            page_start = current_len
+            page_text = page.extract_text() or ""
 
             # Split into paragraphs
             paragraphs = re.split(r'\n\s*\n', page_text)
 
             for para_text in paragraphs:
                 if para_text.strip():
-                    para_start = sum(len(part) for part in text_parts)
+                    para_start = current_len
                     cleaned_para = para_text.strip() + "\n\n"
                     text_parts.append(cleaned_para)
-
-                    para_end = sum(len(part) for part in text_parts)
+                    current_len += len(cleaned_para)
+                    para_end = current_len
                     paragraph_mapping[paragraph_counter] = (para_start, para_end)
                     paragraph_counter += 1
 
-            page_end = sum(len(part) for part in text_parts)
+            page_end = current_len
             page_mapping[page_num] = (page_start, page_end)
 
         # Single join operation
