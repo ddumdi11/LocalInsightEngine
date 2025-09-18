@@ -16,6 +16,27 @@ The project uses industry-standard tools and follows best practices for scalable
 
 ## RESOLVED ISSUES ✅
 
+### ✅ SACHBUCH-MODUS IMPLEMENTED (September 2025)
+**Status:** NEW FEATURE - Factual content bypass with intelligent UX ✅
+**Solution:** Complete pipeline for scientific/factual document analysis without anonymization
+- Added GUI checkbox "Sachbuch-Modus" with smart state management
+- Implemented bypass_anonymization flag throughout processing pipeline
+- Enhanced UX: disabled checkbox after analysis with re-analyze button
+- **Result:** Full analysis capability for vitamins, minerals, scientific terms
+
+**Technical Implementation:**
+- `main_window.py`: Smart UI state management with re-analyze functionality
+- `main.py`: factual_mode parameter through analysis pipeline
+- `text_processor.py`: Conditional anonymization based on bypass flag
+- `spacy_entity_extractor.py`: Preserve original entities in factual mode
+- **UX:** Intuitive mode switching with clear visual feedback
+
+**Benefits:**
+- 🔬 **Scientific Analysis**: "Vitamin B3", "Magnesium" etc. preserved
+- 🔄 **A/B Testing**: Direct comparison of both modes in GUI
+- ⚖️ **Legal Safety**: User-controlled, copyright-compliant by design
+- 🎯 **Precise Results**: Full detail for factual content analysis
+
 ### ✅ ANONYMIZATION COMPLIANCE ACHIEVED (September 2025)
 **Status:** RESOLVED - All canary phrase tests now passing ✅
 **Solution:** Implemented intelligent entity neutralization in spaCy Entity Extractor
@@ -78,7 +99,7 @@ The project uses industry-standard tools and follows best practices for scalable
 from local_insight_engine.main import LocalInsightEngine
 engine = LocalInsightEngine()
 results = engine.analyze_document(Path("document.pdf"))
-```
+```python
 
 ### Key Architecture Rules
 1. **Never modify Layer 1** to send original text externally
@@ -212,7 +233,7 @@ results = engine.analyze_document(Path("document.pdf"))
 ## Project Structure Guidelines
 
 ### File Organization
-```
+```text
 src/
 ├── package_name/
 │   ├── __init__.py
@@ -282,7 +303,7 @@ requirements/
 - Test error conditions and edge cases
 
 ### pytest Configuration
-```python
+```ini
 # pytest.ini or pyproject.toml
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -23,38 +23,129 @@ logger = logging.getLogger(__name__)
 
 class LocalInsightEngine:
     """Main application class for LocalInsightEngine."""
-    
+
     def __init__(self, settings: Optional[Settings] = None):
         self.settings = settings or Settings()
         self.document_loader = DocumentLoader()
         self.text_processor = TextProcessor()
         self.llm_client = ClaudeClient(self.settings)
         self.export_manager = ExportManager()
+
+        # Store processed data for Q&A
+        self.last_processed_data = None
+        self.last_analysis_result = None
     
-    def analyze_document(self, document_path: Path) -> dict:
+    def analyze_document(self, document_path: Path, factual_mode: bool = False) -> dict:
         """
         Analyze a document through the 3-layer architecture.
-        
+
         Args:
             document_path: Path to the document to analyze
-            
+            factual_mode: If True, disables anonymization of common factual terms
+
         Returns:
             Analysis results dictionary
         """
         logger.info(f"Starting analysis of document: {document_path}")
-        
+
         # Layer 1: Load document
         document = self.document_loader.load(document_path)
-        
+
         # Layer 2: Process and neutralize content
-        processed_data = self.text_processor.process(document)
-        
+        processed_data = self.text_processor.process(document, bypass_anonymization=factual_mode)
+
         # Layer 3: Analyze with LLM
         analysis = self.llm_client.analyze(processed_data)
-        
+
+        # Store for Q&A
+        self.last_processed_data = processed_data
+        self.last_analysis_result = analysis
+
         logger.info("Analysis completed successfully")
         return analysis
-    
+
+    def answer_question(self, question: str) -> str:
+        """
+        Answer a question about the last analyzed document using original chunk data.
+
+        Args:
+            question: Question to answer
+
+        Returns:
+            Answer based on neutralized document content
+        """
+        if not self.last_processed_data:
+            return "No document has been analyzed yet. Please analyze a document first."
+
+        # Search through chunks for relevant content
+        relevant_chunks = []
+        question_lower = question.lower()
+
+        # Simple keyword matching in neutralized content
+        for chunk in self.last_processed_data.chunks[:50]:  # Search in first 50 chunks
+            if chunk.neutralized_content:
+                content_lower = chunk.neutralized_content.lower()
+                # Check if any word from question appears in chunk
+                question_words = question_lower.split()
+                if any(word in content_lower for word in question_words if len(word) > 3):
+                    relevant_chunks.append(chunk.neutralized_content[:300])
+
+        # If no relevant chunks found, use first few chunks as context
+        if not relevant_chunks:
+            relevant_chunks = [
+                chunk.neutralized_content[:300]
+                for chunk in self.last_processed_data.chunks[:10]
+                if chunk.neutralized_content
+            ]
+
+        # Create context from relevant chunks
+        context = "\n".join(relevant_chunks[:5])  # Max 5 chunks
+
+        # Create Q&A prompt
+        from .models.text_data import ProcessedText, TextChunk
+        from uuid import uuid4
+
+        qa_context = f"""
+Based on the following document content, please answer the user's question.
+
+Document content:
+{context}
+
+Question: {question}
+
+Please provide a helpful and accurate answer based only on the document content provided.
+"""
+
+        # Create ProcessedText for Q&A
+        qa_processed = ProcessedText(
+            id=uuid4(),
+            source_document_id=self.last_processed_data.source_document_id,
+            chunks=[
+                TextChunk(
+                    id=uuid4(),
+                    neutralized_content=qa_context,
+                    source_document_id=self.last_processed_data.source_document_id,
+                    original_char_range=(0, len(qa_context)),
+                    word_count=len(qa_context.split())
+                )
+            ]
+        )
+
+        # Use dedicated Q&A method for better results
+        try:
+            # Try the new specialized Q&A method first
+            if hasattr(self.llm_client, 'answer_question'):
+                return self.llm_client.answer_question(self.last_processed_data, question)
+            else:
+                # Fallback to general analysis method
+                result = self.llm_client.analyze(qa_processed)
+                if isinstance(result, dict):
+                    return (result.get('executive_summary') or
+                           str(result.get('insights', 'No answer available')))
+                return str(result)
+        except Exception:
+            logger.exception("answer_question failed")
+            return "Sorry, I could not process your question due to a technical error."
     def analyze_and_export(
         self, 
         document_path: Path, 
@@ -81,7 +172,7 @@ class LocalInsightEngine:
         document = self.document_loader.load(document_path)
         
         # Layer 2: Process and neutralize content
-        processed_data = self.text_processor.process(document)
+        processed_data = self.text_processor.process(document, bypass_anonymization=factual_mode)
         
         # Layer 3: Analyze with LLM
         analysis = self.llm_client.analyze(processed_data)

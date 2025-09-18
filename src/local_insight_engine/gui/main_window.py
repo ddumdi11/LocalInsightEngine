@@ -23,8 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 class LocalInsightEngineGUI:
-    def __init__(self):
-        self.root = tk.Tk()
+    def __init__(self, root=None):
+        # Use provided root or create new one
+        self.root = root if root is not None else tk.Tk()
         self.root.title(f"LocalInsightEngine {__version__} - GUI")
         self.root.geometry("900x700")
 
@@ -87,6 +88,24 @@ class LocalInsightEngineGUI:
         # Button frame for better layout
         btn_frame = ttk.Frame(actions_frame)
         btn_frame.grid(row=0, column=0, sticky=(tk.W, tk.E))
+
+        # Factual content mode checkbox
+        self.factual_mode_var = tk.BooleanVar(value=False)
+        self.factual_checkbox = ttk.Checkbutton(
+            actions_frame,
+            text="Sachbuch-Modus (keine Anonymisierung gängiger Begriffe)",
+            variable=self.factual_mode_var
+        )
+        self.factual_checkbox.grid(row=1, column=0, sticky=tk.W, pady=(10, 5))
+
+        # Re-analyze button (initially hidden)
+        self.reanalyze_button = ttk.Button(
+            actions_frame,
+            text="🔄 Neu analysieren im Standard-Modus",
+            command=self.reanalyze_other_mode
+        )
+        # Initially hide the button
+        self.reanalyze_button.grid_remove()
 
         # Action buttons
         ttk.Button(btn_frame, text="Analyze Document", command=self.analyze_document).grid(
@@ -218,7 +237,9 @@ class LocalInsightEngineGUI:
     def _analyze_document_bg(self):
         """Background thread for document analysis"""
         try:
-            analysis_dict = self.engine.analyze_document(self.current_document)
+            # Get factual mode setting from GUI
+            factual_mode = self.factual_mode_var.get()
+            analysis_dict = self.engine.analyze_document(self.current_document, factual_mode=factual_mode)
             # Convert dict to AnalysisResult object with robust error handling
             if isinstance(analysis_dict, dict):
                 try:
@@ -238,6 +259,9 @@ class LocalInsightEngineGUI:
         """Handle successful analysis completion"""
         self.log_message("✓ Analysis completed successfully!")
         self.ask_button.config(state="normal")
+
+        # Update factual mode UI after analysis
+        self._update_factual_mode_ui()
 
     def _analysis_error(self, error_msg: str):
         """Handle analysis error"""
@@ -308,97 +332,8 @@ class LocalInsightEngineGUI:
     def _ask_question_bg(self, question: str):
         """Background thread for Q&A"""
         try:
-            # Use the analysis engine to answer questions about the neutralized content
-            from local_insight_engine.services.analysis_engine.claude_client import ClaudeClient
-
-            analyzer = ClaudeClient()
-
-            # Get neutralized content from analysis result (works with both AnalysisResult objects and dicts)
-            neutralized_content = ""
-            if self.analysis_result:
-                # Handle AnalysisResult object
-                if hasattr(self.analysis_result, 'executive_summary'):
-                    if self.analysis_result.executive_summary:
-                        neutralized_content = self.analysis_result.executive_summary
-                    elif hasattr(self.analysis_result, 'main_themes') and self.analysis_result.main_themes:
-                        neutralized_content = "Main themes: " + ", ".join(self.analysis_result.main_themes)
-                    elif hasattr(self.analysis_result, 'insights') and self.analysis_result.insights:
-                        neutralized_content = "\n".join([insight.content for insight in self.analysis_result.insights])
-                # Handle dict
-                elif isinstance(self.analysis_result, dict):
-                    if 'executive_summary' in self.analysis_result and self.analysis_result['executive_summary']:
-                        neutralized_content = self.analysis_result['executive_summary']
-                    elif 'main_themes' in self.analysis_result and self.analysis_result['main_themes']:
-                        neutralized_content = "Main themes: " + ", ".join(self.analysis_result['main_themes'])
-                    elif 'insights' in self.analysis_result and self.analysis_result['insights']:
-                        insights = self.analysis_result['insights']
-                        if isinstance(insights, list):
-                            neutralized_content = "\n".join([str(insight) for insight in insights])
-                        else:
-                            neutralized_content = str(insights)
-                    else:
-                        # Fallback: use any available content from the dict
-                        neutralized_content = str(self.analysis_result)[:1000]
-
-                if not neutralized_content:
-                    neutralized_content = "Analysis result available but no suitable content found for Q&A."
-
-            # Create context for the question
-            context = f"""
-            Based on the following analyzed content, please answer the user's question.
-
-            Content: {neutralized_content[:3000]}...
-
-            Question: {question}
-
-            Please provide a helpful answer based only on the content provided.
-            """
-
-            # Get answer from Claude
-            # Create a simple ProcessedText-like object for the question
-            from local_insight_engine.models.text_data import ProcessedText, TextChunk
-            from uuid import uuid4
-
-            # Create a minimal ProcessedText object with the question context
-            processed_text = ProcessedText(
-                id=uuid4(),
-                source_document_id=uuid4(),
-                chunks=[
-                    TextChunk(
-                        id=uuid4(),
-                        neutralized_content=context,
-                        source_document_id=uuid4(),
-                        original_char_range=(0, len(context)),
-                        word_count=len(context.split())
-                    )
-                ]
-            )
-
-            result = analyzer.analyze(processed_text)
-
-            # Debug: Log what we get back from Claude
-            print(f"DEBUG: Claude result type: {type(result)}")
-            print(f"DEBUG: Claude result keys: {result.keys() if isinstance(result, dict) else 'Not a dict'}")
-            print(f"DEBUG: Claude result: {result}")
-
-            # Try different ways to extract the answer
-            answer = None
-            if isinstance(result, dict):
-                # Try engine-specific keys first
-                answer = (result.get('executive_summary') or
-                         result.get('insights') or
-                         # Then try generic fallback keys
-                         result.get('summary') or
-                         result.get('answer') or
-                         result.get('response') or
-                         result.get('content') or
-                         result.get('text'))
-
-                # Final fallback to string representation
-                if not answer:
-                    answer = str(result)
-            else:
-                answer = str(result)
+            # Use the engine's new answer_question method that searches through original chunks
+            answer = self.engine.answer_question(question)
 
             if not answer or answer == 'None':
                 answer = 'Sorry, I could not extract an answer from the analysis result.'
@@ -471,6 +406,56 @@ GUI Features:
 
         messagebox.showinfo("Version Information", version_info)
         self.log_message("Version information displayed")
+
+    def _update_factual_mode_ui(self):
+        """Update factual mode UI after analysis"""
+        if self.analysis_result:
+            # Disable checkbox and update text
+            current_mode = self.factual_mode_var.get()
+            if current_mode:
+                self.factual_checkbox.config(
+                    state="disabled",
+                    text="☑ Sachbuch-Modus aktiv"
+                )
+                self.reanalyze_button.config(text="🔄 Neu analysieren im Standard-Modus")
+            else:
+                self.factual_checkbox.config(
+                    state="disabled",
+                    text="☐ Standard-Modus aktiv"
+                )
+                self.reanalyze_button.config(text="🔄 Neu analysieren im Sachbuch-Modus")
+
+            # Show re-analyze button
+            self.reanalyze_button.grid(row=2, column=0, sticky=tk.W, pady=(5, 5))
+        else:
+            # Enable checkbox for new analysis
+            self.factual_checkbox.config(
+                state="normal",
+                text="Sachbuch-Modus (keine Anonymisierung gängiger Begriffe)"
+            )
+            # Hide re-analyze button
+            self.reanalyze_button.grid_remove()
+
+    def reanalyze_other_mode(self):
+        """Re-analyze document in the other mode"""
+        if not self.current_document:
+            messagebox.showwarning("No Document", "Please select a document first.")
+            return
+
+        # Toggle the mode
+        current_mode = self.factual_mode_var.get()
+        self.factual_mode_var.set(not current_mode)
+
+        # Reset UI to pre-analysis state temporarily
+        self.factual_checkbox.config(state="normal")
+        self.reanalyze_button.grid_remove()
+
+        # Log the mode switch
+        new_mode = "Sachbuch-Modus" if not current_mode else "Standard-Modus"
+        self.log_message(f"🔄 Wechsle zu {new_mode} und analysiere neu...")
+
+        # Start re-analysis
+        self.run_in_thread(self._analyze_document_bg)
 
     def run(self):
         """Start the GUI application"""

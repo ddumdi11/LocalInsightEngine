@@ -242,13 +242,16 @@ CREATE TABLE qa_exchanges (
     timestamp TEXT NOT NULL,             -- ISO-8601 UTC
     user_rating INTEGER CHECK(user_rating BETWEEN 1 AND 5),
     is_bookmarked INTEGER NOT NULL DEFAULT 0 CHECK(is_bookmarked IN (0,1)),
+    is_neutralized INTEGER NOT NULL DEFAULT 0 CHECK(is_neutralized IN (0,1)),  -- Copyright compliance flag
     context_used TEXT,
     tokens_used INTEGER NOT NULL CHECK(tokens_used >= 0),
     confidence_score REAL CHECK(confidence_score BETWEEN 0 AND 1),
     answer_quality TEXT,
     answer_origin TEXT,
     safety_flags TEXT CHECK(safety_flags IS NULL OR json_valid(safety_flags)),                   -- JSON array
-    checksum TEXT
+    checksum TEXT,
+    -- Ensure neutralization safety: only neutralized content with safety evidence can be indexed
+    CHECK(is_neutralized = 0 OR (is_neutralized = 1 AND safety_flags IS NOT NULL))
 );
 
 -- Indexes
@@ -261,20 +264,30 @@ CREATE VIRTUAL TABLE qa_search USING fts5(
     content='qa_exchanges'
 );
 
--- Keep FTS in sync
+-- Keep FTS in sync - ONLY index neutralized content for copyright compliance
 CREATE TRIGGER IF NOT EXISTS qa_exchanges_ai AFTER INSERT ON qa_exchanges BEGIN
+  -- Only index if content is properly neutralized
   INSERT INTO qa_search(rowid, question, answer, context_used)
-  VALUES (new.rowid, new.question, new.answer, new.context_used);
+  SELECT new.rowid, new.question, new.answer, new.context_used
+  WHERE new.is_neutralized = 1;
 END;
+
 CREATE TRIGGER IF NOT EXISTS qa_exchanges_ad AFTER DELETE ON qa_exchanges BEGIN
+  -- Always remove from FTS index when deleted
   INSERT INTO qa_search(qa_search, rowid, question, answer, context_used)
   VALUES('delete', old.rowid, old.question, old.answer, old.context_used);
 END;
+
 CREATE TRIGGER IF NOT EXISTS qa_exchanges_au AFTER UPDATE ON qa_exchanges BEGIN
+  -- Handle neutralization state transitions
+  -- Remove old version from FTS
   INSERT INTO qa_search(qa_search, rowid, question, answer, context_used)
   VALUES('delete', old.rowid, old.question, old.answer, old.context_used);
+
+  -- Add new version only if neutralized
   INSERT INTO qa_search(rowid, question, answer, context_used)
-  VALUES (new.rowid, new.question, new.answer, new.context_used);
+  SELECT new.rowid, new.question, new.answer, new.context_used
+  WHERE new.is_neutralized = 1;
 END;
 
 ### **Smart Caching Strategy**

@@ -11,8 +11,9 @@ Eine vollständig funktionsfähige Python-Anwendung zur Analyse von PDF-Dokument
 
 ## ✨ Features
 
-- **🔒 Urheberrechtskonform**: Niemals Originaltext an externe APIs
-- **🏗️ 3-Layer-Architektur**: Saubere Trennung von Datenverarbeitung und Analyse  
+- **📖 Sachbuch-Modus**: Bypass für faktische Inhalte - keine Anonymisierung wissenschaftlicher Begriffe
+- **🔒 Urheberrechtskonform**: Niemals Originaltext an externe APIs (außer im bewusst gewählten Sachbuch-Modus)
+- **🏗️ 3-Layer-Architektur**: Saubere Trennung von Datenverarbeitung und Analyse
 - **🇩🇪 Deutsche & Englische NLP**: spaCy-basierte Named Entity Recognition
 - **🤖 Claude-4 Integration**: Modernste KI-Analyse mit intelligenten Insights
 - **📁 Multi-Format Support**: PDF, TXT, EPUB, DOCX mit automatischer Erkennung
@@ -78,6 +79,51 @@ export LLM_API_KEY="your-claude-api-key"
 # Oder in .env Datei:
 echo "LLM_API_KEY=your-claude-api-key" > .env
 ```
+
+## 📖 Sachbuch-Modus (Neu!)
+
+**Für wissenschaftliche und faktische Inhalte** - Der Sachbuch-Modus ermöglicht die vollständige Analyse von Sachbüchern ohne Anonymisierung gängiger Begriffe.
+
+### 🔄 Funktionsweise
+
+**Vor der Analyse:**
+```
+☐ Sachbuch-Modus (keine Anonymisierung gängiger Begriffe) [AKTIV]
+[Analyze Document] Button
+```
+
+**Nach Analyse im Standard-Modus:**
+```
+☐ Standard-Modus aktiv [AUSGEGRAUT]
+[🔄 Neu analysieren im Sachbuch-Modus] Button
+```
+
+**Nach Analyse im Sachbuch-Modus:**
+```
+☑ Sachbuch-Modus aktiv [AUSGEGRAUT]
+[🔄 Neu analysieren im Standard-Modus] Button
+```
+
+### 🎯 Vorteile des Sachbuch-Modus
+
+- ✅ **Präzise Vitamin-Analysen**: "Vitamin B3" bleibt erhalten statt neutralisiert
+- ✅ **Wissenschaftliche Begriffe**: Niacin, Magnesium, Folsäure werden nicht anonymisiert
+- ✅ **A/B Testing**: Direkter Vergleich beider Modi in der GUI
+- ✅ **User-Kontrolle**: Bewusste Entscheidung pro Dokument
+- ✅ **Rechtssicherheit**: Standard-Modus bleibt aktiv für urheberrechtlich geschützte Literatur
+
+### ⚖️ Rechtliche Einordnung
+
+**Sachbuch-Modus ist sicher für:**
+- Wissenschaftliche Fachbegriffe (Vitamin B3, Calcium, etc.)
+- Medizinische Terminologie
+- Allgemeine Sachbuch-Inhalte
+- Faktische Informationen
+
+**Standard-Modus verwenden für:**
+- Belletristik und kreative Werke
+- Persönliche/private Dokumente
+- Unbekannte Urheberrechtssituation
 
 ## 🎯 Nutzung
 

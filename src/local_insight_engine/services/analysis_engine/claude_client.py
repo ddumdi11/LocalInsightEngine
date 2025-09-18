@@ -26,8 +26,9 @@ class ClaudeClient:
     copyright compliance by never transmitting original text.
     """
     
-    def __init__(self, settings: Optional[Settings] = None):
+    def __init__(self, settings: Optional[Settings] = None, debug_logging: bool = False):
         self.settings = settings or Settings()
+        self.debug_logging = debug_logging
         self.client = None
         self._initialize_client()
         
@@ -95,23 +96,43 @@ Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen."""
     def analyze(self, processed_text: ProcessedText) -> Dict[str, Any]:
         """
         Analyze processed text using Claude API.
-        
+
         Args:
             processed_text: Neutralized text from Layer 2
-            
+
         Returns:
             Analysis results from Claude
         """
         if not self.client:
             logger.warning("Claude client not available, returning mock analysis")
             return self._mock_analysis(processed_text)
-        
+
         start_time = datetime.now()
-        
+
+        # DEBUG: Log analysis details (only when explicitly enabled to prevent PII leaks)
+        if self.debug_logging:
+            logger.debug(f"=== DEBUGGING PROCESSED TEXT ===")
+            logger.debug(f"ProcessedText chunks count: {len(processed_text.chunks)}")
+            logger.debug(f"ProcessedText total_chunks: {processed_text.total_chunks}")
+            logger.debug(f"ProcessedText all_entities count: {len(processed_text.all_entities)}")
+            logger.debug(f"ProcessedText total_entities: {processed_text.total_entities}")
+            logger.debug(f"ProcessedText key_themes: {processed_text.key_themes}")
+            logger.debug(f"First chunk sample: {processed_text.chunks[0] if processed_text.chunks else 'NO CHUNKS'}")
+            if processed_text.chunks:
+                # Mask potential PII in content while preserving structure info
+                content_preview = processed_text.chunks[0].neutralized_content[:200] if processed_text.chunks[0].neutralized_content else 'EMPTY NEUTRALIZED_CONTENT'
+                masked_content = self._mask_potential_pii(content_preview)
+                logger.debug(f"First chunk neutralized_content: {masked_content}")
+                logger.debug(f"First chunk key_statements: {processed_text.chunks[0].key_statements}")
+            logger.debug(f"=== END DEBUG ===")
+        else:
+            # Safe logging for production - no content, just statistics
+            logger.info(f"Processing {len(processed_text.chunks)} chunks with {len(processed_text.all_entities)} entities")
+
         try:
             # Prepare content for Claude
             content = self._prepare_content(processed_text)
-            
+
             # Call Claude API
             response = self.client.messages.create(
                 model=self.settings.llm_model,
@@ -140,33 +161,181 @@ Antworte NUR mit validem JSON, keine zusätzlichen Erklärungen."""
             logger.error(f"Claude API call failed: {e}")
             return self._mock_analysis(processed_text)
 
+    def answer_question(self, processed_text: ProcessedText, question: str) -> str:
+        """
+        Answer a specific question about processed text using Claude API.
+
+        Args:
+            processed_text: Neutralized text from Layer 2
+            question: User's question about the content
+
+        Returns:
+            Direct answer string (not full analysis structure)
+        """
+        if not self.client:
+            return "Analysis service not available. Please check API configuration."
+
+        start_time = datetime.now()
+
+        # Safe logging for Q&A - mask question to prevent PII leaks
+        if self.debug_logging:
+            # Only log full question details when explicitly enabled
+            logger.debug(f"Processing Q&A for {len(processed_text.chunks)} chunks, question: {self._mask_potential_pii(question)}")
+        else:
+            # Production safe logging - no question content
+            logger.info(f"Processing Q&A for {len(processed_text.chunks)} chunks")
+
+        try:
+            # Prepare focused content for Q&A
+            context = self._prepare_qa_content(processed_text, question)
+
+            # Specialized Q&A prompt
+            qa_prompt = f"""Du bist ein präziser Assistent für Dokumentenanalyse.
+
+Beantworte die Frage des Nutzers basierend AUSSCHLIESSLICH auf dem bereitgestellten neutralisierten Inhalt.
+
+WICHTIG:
+- Antworte nur mit Informationen aus dem bereitgestellten Text
+- Falls die Information nicht vorhanden ist, sage das ehrlich
+- Halte die Antwort präzise und sachlich
+- Keine Spekulationen oder externes Wissen
+
+NEUTRALISIERTER INHALT:
+{context}
+
+FRAGE: {question}
+
+ANTWORT:"""
+
+            # Call Claude API for Q&A
+            response = self.client.messages.create(
+                model=self.settings.llm_model,
+                max_tokens=1000,  # Shorter for Q&A
+                temperature=0.1,  # Very low for factual answers
+                messages=[
+                    {
+                        "role": "user",
+                        "content": qa_prompt
+                    }
+                ]
+            )
+
+            answer = response.content[0].text.strip()
+
+            logger.info(f"Q&A completed successfully in {(datetime.now() - start_time).total_seconds():.2f}s")
+            return answer
+
+        except Exception as e:
+            logger.error(f"Q&A failed: {e}")
+            return f"Sorry, I could not process your question due to a technical error."
+
+    def _prepare_qa_content(self, processed_text: ProcessedText, question: str) -> str:
+        """Prepare focused content for Q&A (different from full analysis)."""
+
+        # Smart chunk selection based on question keywords
+        question_lower = question.lower()
+        question_words = [word for word in question_lower.split() if len(word) > 2]
+
+        relevant_chunks = []
+
+        # Search for relevant chunks
+        for chunk in processed_text.chunks[:100]:  # Search first 100 chunks
+            if chunk.neutralized_content:
+                content_lower = chunk.neutralized_content.lower()
+                # Score chunks by keyword relevance
+                score = sum(1 for word in question_words if word in content_lower)
+                if score > 0:
+                    relevant_chunks.append((score, chunk.neutralized_content[:400]))
+
+        # Sort by relevance and take top chunks
+        relevant_chunks.sort(key=lambda x: x[0], reverse=True)
+        selected_content = [content for score, content in relevant_chunks[:5]]
+
+        # Fallback to first chunks if no relevant content found
+        if not selected_content:
+            selected_content = [
+                chunk.neutralized_content[:400]
+                for chunk in processed_text.chunks[:3]
+                if chunk.neutralized_content
+            ]
+
+        return "\n\n".join(selected_content)
+
     def _prepare_content(self, processed_text: ProcessedText) -> str:
         """Prepare neutralized content for Claude analysis."""
-        
+
         # Sample key statements from chunks
         key_statements = []
+        chunk_contents = []
+
         for chunk in processed_text.chunks[:20]:  # Limit to first 20 chunks
+            # Get key statements if available
             if chunk.key_statements:
                 key_statements.extend(chunk.key_statements[:3])  # Max 3 per chunk
-        
+            # Also get chunk content as fallback
+            if hasattr(chunk, 'neutralized_content') and chunk.neutralized_content:
+                chunk_contents.append(chunk.neutralized_content[:200])  # First 200 chars
+            elif hasattr(chunk, 'content') and chunk.content:
+                chunk_contents.append(chunk.content[:200])  # First 200 chars
+
         # Prepare entity summary
         entity_summary = self._summarize_entities(processed_text.all_entities)
-        
+
         # Entity type statistics
         entity_types = {}
         for entity in processed_text.all_entities:
             entity_types[entity.label] = entity_types.get(entity.label, 0) + 1
-        
+
+        # Combine all available content
+        all_content = []
+        if key_statements:
+            all_content.extend(key_statements[:30])
+        if chunk_contents and not key_statements:
+            all_content.extend(chunk_contents[:15])  # Fallback to chunk content
+
+        # Debug logging
+        logger.debug(f"Content preparation: {len(key_statements)} statements, {len(chunk_contents)} chunks, {len(all_content)} total items")
+        logger.debug(f"Sample content: {all_content[:2] if all_content else 'NO CONTENT'}")
+
         content = self.analysis_prompt.format(
-            content="\n".join(key_statements[:30]),  # Limit total statements
-            entities=entity_summary,
+            content="\n".join(all_content),
             themes=", ".join(processed_text.key_themes),
             chunk_count=processed_text.total_chunks,
-            entity_count=processed_text.total_entities,
-            entity_types=", ".join([f"{k}: {v}" for k, v in entity_types.items()])
+            entity_count=processed_text.total_entities
         )
-        
+
         return content
+
+    def _mask_potential_pii(self, text: str) -> str:
+        """
+        Mask potential PII in log output for privacy protection.
+
+        Args:
+            text: Text that might contain personal information
+
+        Returns:
+            Text with potential PII masked but structure preserved
+        """
+        import re
+
+        # Don't mask if text is too short
+        if len(text) < 20:
+            return text
+
+        # Mask potential questions that might contain personal info
+        if "?" in text:
+            return "[QUESTION_CONTENT_MASKED_FOR_PRIVACY]"
+
+        # Mask potential personal names (sequences of capitalized words)
+        masked = re.sub(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b', '[NAME]', text)
+
+        # Mask potential email addresses
+        masked = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', '[EMAIL]', masked)
+
+        # Mask potential phone numbers
+        masked = re.sub(r'\b\d{3,4}[-.\s]?\d{3,4}[-.\s]?\d{3,4}\b', '[PHONE]', masked)
+
+        return masked[:200] + ("..." if len(text) > 200 else "")
 
     def _summarize_entities(self, entities: List) -> str:
         """Create a summary of entities by type."""
