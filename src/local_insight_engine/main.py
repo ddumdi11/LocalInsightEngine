@@ -239,6 +239,7 @@ class LocalInsightEngine:
             from .models.text_data import ProcessedText, TextChunk
 
             qa_context = f"""
+
 Based on the following document content, please answer the user's question.
 
 Document content:
