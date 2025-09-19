@@ -179,8 +179,9 @@ class AnalysisReport(BaseModel):
 
     def get_local_transparency_section(self) -> Dict[str, Any]:
         """Get data for local transparency display (full entity names)."""
+        # Look for either pre_anonymization OR factual_mode_extraction stage
         pre_anon_stage = next(
-            (s for s in self.statistics.extraction_stages if s.stage_name == "pre_anonymization"),
+            (s for s in self.statistics.extraction_stages if s.stage_name in ["pre_anonymization", "factual_mode_extraction"]),
             None
         )
 

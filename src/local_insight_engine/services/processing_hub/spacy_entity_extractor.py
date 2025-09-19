@@ -184,8 +184,12 @@ class SpacyEntityExtractor:
                     # CRITICAL: Neutralize suspicious identifiers for copyright compliance
                     # BUT: Skip neutralization in factual content mode
                     entity_text = ent.text.strip()
-                    # Always run through neutralizer; it preserves whitelisted legitimate terms.
-                    neutralized_text = self._neutralize_suspicious_identifiers(entity_text)
+
+                    # Skip neutralization in factual mode (Sachbuch-Modus)
+                    if bypass_anonymization:
+                        neutralized_text = entity_text  # Preserve original for scientific accuracy
+                    else:
+                        neutralized_text = self._neutralize_suspicious_identifiers(entity_text)
                     entity = EntityData(
                         text=neutralized_text,
                         label=our_label,
