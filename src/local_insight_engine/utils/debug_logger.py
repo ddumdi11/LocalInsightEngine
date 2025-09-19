@@ -47,7 +47,7 @@ class LocalInsightDebugLogger:
 
         return config
 
-    def _create_default_config(self, config_path: Path):
+    def _create_default_config(self, config_path: Path) -> None:
         """Create default configuration file if it doesn't exist"""
         default_config = """# LocalInsightEngine Configuration File
 [Logging]
@@ -145,7 +145,7 @@ log_entity_details = true
 
         return logger
 
-    def _log_initialization(self):
+    def _log_initialization(self) -> None:
         """Log initialization information"""
         self.logger.info("=" * 80)
         self.logger.info(f"LocalInsightEngine Debug Logger - {datetime.datetime.now()}")
@@ -154,7 +154,7 @@ log_entity_details = true
         self.logger.info(f"Configuration loaded from: {self.config}")
         self.logger.info("=" * 80)
 
-    def step(self, step_name: str, details: Dict[str, Any] = None):
+    def step(self, step_name: str, details: Optional[Dict[str, Any]] = None) -> None:
         """Log a major step in the analysis process"""
         self.step_counter += 1
         self.logger.info(f"STEP {self.step_counter}: {step_name}")
@@ -162,7 +162,7 @@ log_entity_details = true
             for key, value in details.items():
                 self.logger.info(f"  {key}: {value}")
 
-    def debug(self, message: str, data: Any = None):
+    def debug(self, message: str, data: Optional[Any] = None) -> None:
         """Log debug information"""
         self.logger.debug(f"DEBUG: {message}")
         if data is not None:
@@ -171,19 +171,19 @@ log_entity_details = true
             else:
                 self.logger.debug(f"  Data: {data}")
 
-    def info(self, message: str, data: Any = None):
+    def info(self, message: str, data: Optional[Any] = None) -> None:
         """Log info information"""
         self.logger.info(f"INFO: {message}")
         if data is not None:
             self.logger.info(f"  Data: {data}")
 
-    def warning(self, message: str, data: Any = None):
+    def warning(self, message: str, data: Optional[Any] = None) -> None:
         """Log warning information"""
         self.logger.warning(f"WARNING: {message}")
         if data is not None:
             self.logger.warning(f"  Data: {data}")
 
-    def error(self, message: str, exception: Exception = None, data: Any = None):
+    def error(self, message: str, exception: Optional[Exception] = None, data: Optional[Any] = None) -> None:
         """Log error information"""
         self.logger.error(f"ERROR: {message}")
         if exception:
@@ -194,7 +194,7 @@ log_entity_details = true
         if data is not None:
             self.logger.error(f"  Data: {data}")
 
-    def performance_start(self, operation: str):
+    def performance_start(self, operation: str) -> None:
         """Start performance tracking for an operation"""
         if self.config.getboolean('Performance', 'enable_performance_logging', fallback=True):
             import time
@@ -204,7 +204,7 @@ log_entity_details = true
             }
             self.logger.debug(f"PERF START: {operation}")
 
-    def performance_end(self, operation: str, details: Dict[str, Any] = None):
+    def performance_end(self, operation: str, details: Optional[Dict[str, Any]] = None) -> None:
         """End performance tracking for an operation"""
         if self.config.getboolean('Performance', 'enable_performance_logging', fallback=True):
             import time
@@ -222,7 +222,7 @@ log_entity_details = true
             else:
                 self.logger.warning(f"PERF END: {operation} - No start time recorded")
 
-    def file_info(self, file_path: Union[str, Path], description: str = ""):
+    def file_info(self, file_path: Union[str, Path], description: str = "") -> None:
         """Log file information"""
         file_path = Path(file_path)
         if file_path.exists():
@@ -233,13 +233,13 @@ log_entity_details = true
         else:
             self.logger.error(f"FILE NOT FOUND: {description} - {file_path}")
 
-    def document_analysis(self, doc_path: Path, stats: Dict[str, Any]):
+    def document_analysis(self, doc_path: Path, stats: Dict[str, Any]) -> None:
         """Log document analysis statistics"""
         self.logger.info(f"DOCUMENT ANALYSIS: {doc_path.name}")
         for key, value in stats.items():
             self.logger.info(f"  {key}: {value}")
 
-    def chunk_details(self, chunk_id: str, chunk_data: Dict[str, Any]):
+    def chunk_details(self, chunk_id: str, chunk_data: Dict[str, Any]) -> None:
         """Log detailed chunk information"""
         if self.config.getboolean('Performance', 'log_chunk_details', fallback=True):
             self.logger.debug(f"CHUNK: {chunk_id}")
@@ -249,7 +249,7 @@ log_entity_details = true
                 else:
                     self.logger.debug(f"  {key}: {value}")
 
-    def entity_extraction(self, entities: list, source: str = ""):
+    def entity_extraction(self, entities: list, source: str = "") -> None:
         """Log entity extraction results"""
         if self.config.getboolean('Performance', 'log_entity_details', fallback=True):
             self.logger.info(f"ENTITIES EXTRACTED: {len(entities)} from {source}")
@@ -261,14 +261,14 @@ log_entity_details = true
             if len(entities) > 10:
                 self.logger.debug(f"  ... and {len(entities) - 10} more entities")
 
-    def database_operation(self, operation: str, details: Dict[str, Any] = None):
+    def database_operation(self, operation: str, details: Optional[Dict[str, Any]] = None) -> None:
         """Log database operations"""
         self.logger.info(f"DATABASE: {operation}")
         if details:
             for key, value in details.items():
                 self.logger.info(f"  {key}: {value}")
 
-    def qa_session(self, question: str, answer: str, context_chunks: int, confidence: float = None):
+    def qa_session(self, question: str, answer: str, context_chunks: int, confidence: Optional[float] = None) -> None:
         """Log Q&A session details"""
         self.logger.info(f"Q&A SESSION:")
         self.logger.info(f"  Question: {question}")
@@ -278,7 +278,7 @@ log_entity_details = true
             self.logger.info(f"  Confidence: {confidence}")
         self.logger.debug(f"  Full Answer: {answer}")
 
-    def test_dependencies(self):
+    def test_dependencies(self) -> None:
         """Test and log all LocalInsightEngine dependencies"""
         self.step("Testing LocalInsightEngine Dependencies")
 
@@ -312,7 +312,7 @@ log_entity_details = true
         """Return the path to the log file"""
         return str(self.log_file)
 
-    def get_config_value(self, section: str, key: str, fallback: Any = None):
+    def get_config_value(self, section: str, key: str, fallback: Optional[Any] = None) -> Any:
         """Get configuration value"""
         return self.config.get(section, key, fallback=fallback)
 

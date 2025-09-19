@@ -10,6 +10,7 @@ from datetime import datetime
 
 from ...models.document import Document
 from ...models.text_data import ProcessedText, TextChunk, EntityData
+from ...models.analysis_statistics import DocumentAnalysisStatistics
 from .spacy_statement_extractor import SpacyStatementExtractor
 from .spacy_entity_extractor import SpacyEntityExtractor
 from .statistics_collector import StatisticsCollector
@@ -316,6 +317,6 @@ class TextProcessor:
         # End timing
         self.statistics_collector.end_timer("text_processing")
 
-    def get_analysis_statistics(self):
+    def get_analysis_statistics(self) -> DocumentAnalysisStatistics:
         """Get comprehensive analysis statistics."""
         return self.statistics_collector.generate_final_statistics()

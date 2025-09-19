@@ -77,19 +77,6 @@ class LocalInsightEngine:
 
         try:
             # Layer 1: Load document
-            # (existing analysis logic goes here)
-            logger.step("Analysis completed successfully")
-            return analysis
-        except Exception as e:
-            logger.error("Document analysis failed", e, {
-                "document": str(document_path),
-                "factual_mode": factual_mode
-            })
-            raise
-        finally:
-            logger.performance_end("document_analysis")
-        try:
-            # Layer 1: Load document
             logger.performance_start("document_loading")
             document = self.document_loader.load(document_path)
             logger.performance_end("document_loading", {
@@ -134,7 +121,6 @@ class LocalInsightEngine:
             # Store comprehensive statistics for analysis report
             self.last_analysis_statistics = self.text_processor.get_analysis_statistics()
 
-            logger.performance_end("document_analysis")
             logger.step("Analysis completed successfully")
             return analysis
 
@@ -144,55 +130,34 @@ class LocalInsightEngine:
                 "factual_mode": factual_mode
             })
             raise
+        finally:
+            logger.performance_end("document_analysis")
 
     def _persist_analysis(self, document_path: Path, processed_data, analysis: dict, factual_mode: bool):
         """Persist analysis results to database for future Q&A sessions"""
         try:
-            from .persistence.models import PersistentQASession, QAExchange
             from datetime import datetime
             import json
+            from .persistence.repository import SessionRepository
 
             logger.database_operation("Persisting analysis results")
 
-            with self.db_manager.get_session() as session:
-                # Create or update document record
-                doc_record = session.query(Document).filter_by(
-                    file_path=str(document_path)
-                ).first()
-
-                if not doc_record:
-                    doc_record = Document(
-                        document_id=str(uuid4()),
-                        file_path=str(document_path),
-                        file_name=document_path.name,
-                        file_size=document_path.stat().st_size,
-                        content_hash=str(hash(processed_data.chunks[0].neutralized_content[:1000] if processed_data.chunks else "")),
-                        created_at=datetime.now()
-                    )
-                    session.add(doc_record)
-                    session.flush()
-
-                # Create session record
-                session_record = Session(
-                    session_id=str(uuid4()),
-                    document_id=doc_record.document_id,
-                    document_display_name=document_path.name,
-                    factual_mode=factual_mode,
-                    chunk_count=len(processed_data.chunks),
-                    entity_count=len(processed_data.all_entities) if hasattr(processed_data, 'all_entities') else 0,
-                    analysis_summary=json.dumps(analysis) if isinstance(analysis, dict) else str(analysis),
-                    session_start_time=datetime.now(),
-                    session_end_time=datetime.now()
-                )
-                session.add(session_record)
-                session.commit()
-
-                # Store chunks for FTS5 search (simplified for now)
-                logger.database_operation("Analysis persisted", {
-                    "document_id": doc_record.document_id,
-                    "session_id": session_record.session_id,
-                    "chunk_count": len(processed_data.chunks)
-                })
+            repo = SessionRepository(self.db_manager.get_session())
+            neutralized_context = (
+                processed_data.chunks[0].neutralized_content if processed_data.chunks else ""
+            )
+            created = repo.create_session(
+                document_path=str(document_path),
+                analysis_result=analysis,
+                neutralized_context=neutralized_context,
+                factual_mode=factual_mode,
+                chunk_count=len(processed_data.chunks),
+                entity_count=len(getattr(processed_data, "all_entities", [])),
+            )
+            logger.info("Analysis persisted", {
+                "session_id": getattr(created, "session_id", None),
+                "chunk_count": len(processed_data.chunks)
+            })
 
         except Exception as e:
             logger.error("Failed to persist analysis", e)

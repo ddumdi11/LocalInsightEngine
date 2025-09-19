@@ -36,11 +36,11 @@ class StatisticsCollector:
         self.chunks_created: int = 0
         self.chunk_sizes: List[int] = []
 
-    def start_timer(self, operation: str):
+    def start_timer(self, operation: str) -> None:
         """Start timing an operation."""
         self.start_times[operation] = time.time()
 
-    def end_timer(self, operation: str):
+    def end_timer(self, operation: str) -> float:
         """End timing and record duration."""
         if operation in self.start_times:
             duration = time.time() - self.start_times[operation]
@@ -49,19 +49,19 @@ class StatisticsCollector:
             return duration
         return 0.0
 
-    def set_document_info(self, path: str, size: int, format: str, text_length: int):
+    def set_document_info(self, path: str, size: int, format: str, text_length: int) -> None:
         """Record document metadata."""
         self.document_path = path
         self.document_size = size
         self.document_format = format
         self.total_text_length = text_length
 
-    def set_processing_config(self, factual_mode: bool, bypass_anonymization: bool):
+    def set_processing_config(self, factual_mode: bool, bypass_anonymization: bool) -> None:
         """Record processing configuration."""
         self.factual_mode = factual_mode
         self.bypass_anonymization = bypass_anonymization
 
-    def record_chunk_statistics(self, chunk_count: int, chunk_sizes: List[int]):
+    def record_chunk_statistics(self, chunk_count: int, chunk_sizes: List[int]) -> None:
         """Record chunk creation statistics."""
         self.chunks_created = chunk_count
         self.chunk_sizes = chunk_sizes
@@ -73,7 +73,7 @@ class StatisticsCollector:
         entities: List[EntityData],
         processing_time: float,
         anonymization_applied: bool = False
-    ):
+    ) -> None:
         """Record a complete entity extraction stage."""
 
         # Convert EntityData to EntityDetail
