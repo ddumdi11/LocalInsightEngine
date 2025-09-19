@@ -77,6 +77,19 @@ class LocalInsightEngine:
 
         try:
             # Layer 1: Load document
+            # (existing analysis logic goes here)
+            logger.step("Analysis completed successfully")
+            return analysis
+        except Exception as e:
+            logger.error("Document analysis failed", e, {
+                "document": str(document_path),
+                "factual_mode": factual_mode
+            })
+            raise
+        finally:
+            logger.performance_end("document_analysis")
+        try:
+            # Layer 1: Load document
             logger.performance_start("document_loading")
             document = self.document_loader.load(document_path)
             logger.performance_end("document_loading", {
