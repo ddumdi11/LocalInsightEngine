@@ -12,7 +12,7 @@ This is a **LocalInsightEngine** - a sophisticated Python application for copyri
 4. **Layer 4 (persistence)**: SQLite database with FTS5 semantic search
 5. **Layer 5 (utils)**: Enhanced logging, configuration, and performance monitoring
 
-**Key Constraint: Copyright Compliance** - Original text must NEVER be sent to external APIs. Only neutralized, processed content is transmitted.
+**Key Constraint: Copyright Compliance** - Only neutralized text is sent to external APIs. In factual mode, a strict whitelist of scientific terms/entities may be preserved, but all narrative or identifying text remains neutralized. Standard mode: full anonymization; factual mode: whitelist terms only, narrative remains neutralized.
 
 The project uses industry-standard tools and follows best practices for scalable application development.
 

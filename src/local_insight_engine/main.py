@@ -90,7 +90,7 @@ class LocalInsightEngine:
             processed_data = self.text_processor.process(document, bypass_anonymization=factual_mode)
             logger.performance_end("text_processing", {
                 "chunks_created": len(processed_data.chunks),
-                "entities_extracted": len(processed_data.entities) if hasattr(processed_data, 'entities') else 0,
+                "entities_extracted": len(processed_data.all_entities) if hasattr(processed_data, 'all_entities') else 0,
                 "bypass_anonymization": factual_mode
             })
 
@@ -166,7 +166,7 @@ class LocalInsightEngine:
                     document_display_name=document_path.name,
                     factual_mode=factual_mode,
                     chunk_count=len(processed_data.chunks),
-                    entity_count=len(processed_data.entities) if hasattr(processed_data, 'entities') else 0,
+                    entity_count=len(processed_data.all_entities) if hasattr(processed_data, 'all_entities') else 0,
                     analysis_summary=json.dumps(analysis) if isinstance(analysis, dict) else str(analysis),
                     session_start_time=datetime.now(),
                     session_end_time=datetime.now()

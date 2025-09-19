@@ -37,7 +37,7 @@ class AnalysisReportWindow:
         # Center window on parent
         self.center_window()
 
-    def setup_ui(self):
+    def setup_ui(self) -> None:
         """Setup the report UI with tabs for different sections"""
         # Main container
         main_frame = ttk.Frame(self.window, padding="10")
@@ -58,7 +58,7 @@ class AnalysisReportWindow:
         # Buttons section
         self.setup_buttons_section(main_frame)
 
-    def setup_title_section(self, parent):
+    def setup_title_section(self, parent) -> None:
         """Setup title and summary section"""
         title_frame = ttk.Frame(parent)
         title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
@@ -86,7 +86,7 @@ class AnalysisReportWindow:
         ttk.Label(title_frame, text=summary_text, foreground="gray").grid(
             row=2, column=0, columnspan=2, sticky=tk.W, pady=(5, 0))
 
-    def setup_tabs(self, parent):
+    def setup_tabs(self, parent) -> None:
         """Setup tabbed interface for different report sections"""
         # Create notebook for tabs
         self.notebook = ttk.Notebook(parent)
@@ -104,7 +104,7 @@ class AnalysisReportWindow:
         # Tab 4: Compliance Report
         self.setup_compliance_tab()
 
-    def setup_local_transparency_tab(self):
+    def setup_local_transparency_tab(self) -> None:
         """Setup local transparency tab showing original entities"""
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="🔍 Local Transparency")
@@ -138,7 +138,7 @@ class AnalysisReportWindow:
         text_area.insert(tk.END, content)
         text_area.config(state="disabled")
 
-    def setup_transmission_preview_tab(self):
+    def setup_transmission_preview_tab(self) -> None:
         """Setup transmission preview tab showing anonymized entities"""
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="📡 Transmission Preview")
@@ -172,7 +172,7 @@ class AnalysisReportWindow:
         text_area.insert(tk.END, content)
         text_area.config(state="disabled")
 
-    def setup_processing_stats_tab(self):
+    def setup_processing_stats_tab(self) -> None:
         """Setup processing statistics tab"""
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="⏱️ Processing Stats")
@@ -189,7 +189,7 @@ class AnalysisReportWindow:
         text_area.insert(tk.END, content)
         text_area.config(state="disabled")
 
-    def setup_compliance_tab(self):
+    def setup_compliance_tab(self) -> None:
         """Setup compliance report tab"""
         frame = ttk.Frame(self.notebook)
         self.notebook.add(frame, text="⚖️ Compliance")
@@ -206,7 +206,7 @@ class AnalysisReportWindow:
         text_area.insert(tk.END, content)
         text_area.config(state="disabled")
 
-    def setup_buttons_section(self, parent):
+    def setup_buttons_section(self, parent) -> None:
         """Setup buttons for export and close"""
         btn_frame = ttk.Frame(parent)
         btn_frame.grid(row=2, column=0, sticky=tk.E)
@@ -356,7 +356,7 @@ class AnalysisReportWindow:
 
         return content
 
-    def export_pdf(self):
+    def export_pdf(self) -> None:
         """Export report as PDF"""
         try:
             filename = self.report.generate_export_filename("pdf")
@@ -375,7 +375,7 @@ class AnalysisReportWindow:
             logger.error(f"PDF export failed: {e}")
             messagebox.showerror("Export Error", f"PDF export failed:\n{e}")
 
-    def export_markdown(self):
+    def export_markdown(self) -> None:
         """Export report as Markdown"""
         try:
             filename = self.report.generate_export_filename("md")
@@ -394,7 +394,7 @@ class AnalysisReportWindow:
             logger.error(f"Markdown export failed: {e}")
             messagebox.showerror("Export Error", f"Markdown export failed:\n{e}")
 
-    def export_json(self):
+    def export_json(self) -> None:
         """Export report as JSON"""
         try:
             filename = self.report.generate_export_filename("json")
@@ -413,7 +413,7 @@ class AnalysisReportWindow:
             logger.error(f"JSON export failed: {e}")
             messagebox.showerror("Export Error", f"JSON export failed:\n{e}")
 
-    def _export_as_pdf(self, file_path: str):
+    def _export_as_pdf(self, file_path: str) -> None:
         """Export report content as PDF (placeholder implementation)"""
         # For now, export as text since PDF generation requires additional dependencies
         content = self._generate_full_report_text()
@@ -429,14 +429,14 @@ class AnalysisReportWindow:
                            "Note: Full PDF support requires additional libraries.\n"
                            "Content has been saved in text format for now.")
 
-    def _export_as_markdown(self, file_path: str):
+    def _export_as_markdown(self, file_path: str) -> None:
         """Export report content as Markdown"""
         content = self._generate_markdown_report()
 
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
 
-    def _export_as_json(self, file_path: str):
+    def _export_as_json(self, file_path: str) -> None:
         """Export report data as JSON"""
         # Convert report to dictionary
         report_data = {
@@ -536,7 +536,7 @@ class AnalysisReportWindow:
 
         return content
 
-    def center_window(self):
+    def center_window(self) -> None:
         """Center the window on the parent"""
         self.window.update_idletasks()
 
