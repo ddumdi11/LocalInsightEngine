@@ -440,7 +440,7 @@ Please provide a helpful and accurate answer based only on the document content 
             logger.error("Failed to persist Q&A exchange", e)
             raise
 
-    def get_analysis_report(self):
+    def get_analysis_report(self) -> Optional["AnalysisReport"]:
         """
         Get comprehensive analysis report for UI display.
 
@@ -472,7 +472,6 @@ Please provide a helpful and accurate answer based only on the document content 
         except Exception as e:
             logger.error("Failed to generate analysis report", e)
             return None
-
 
 def main():
     """CLI entry point."""
