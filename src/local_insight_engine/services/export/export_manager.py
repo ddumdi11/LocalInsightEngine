@@ -29,7 +29,8 @@ class ExportManager:
         processed_text: ProcessedText,
         document: Document,
         output_path: Path,
-        formats: Optional[List[str]] = None
+        formats: Optional[List[str]] = None,
+        factual_mode: bool = False
     ) -> Dict[str, bool]:
         """
         Export analysis results to one or more formats.
@@ -40,6 +41,7 @@ class ExportManager:
             document: Original document metadata from Layer 1
             output_path: Base path for exports (without extension)
             formats: List of formats to export (default: ["json"])
+            factual_mode: If True, indicates neutralization was bypassed
             
         Returns:
             Dict mapping format names to success status
@@ -59,7 +61,7 @@ class ExportManager:
             
             try:
                 success = self._export_single_format(
-                    format_name, analysis_result, processed_text, document, output_path
+                    format_name, analysis_result, processed_text, document, output_path, factual_mode
                 )
                 results[format_name] = success
                 
@@ -80,14 +82,15 @@ class ExportManager:
         analysis_result: Dict[str, Any],
         processed_text: ProcessedText,
         document: Document,
-        base_output_path: Path
+        base_output_path: Path,
+        factual_mode: bool = False
     ) -> bool:
         """Export to a single format."""
         
         if format_name == "json":
             output_path = base_output_path.with_suffix(".json")
             return self.json_exporter.export_analysis(
-                analysis_result, processed_text, document, output_path
+                analysis_result, processed_text, document, output_path, factual_mode
             )
         
         # Future formats will be added here

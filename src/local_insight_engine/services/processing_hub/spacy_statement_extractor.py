@@ -60,7 +60,7 @@ class SpacyStatementExtractor:
     def _load_models(self):
         """Load spaCy language models."""
         try:
-            self.german_nlp = spacy.load('de_core_news_sm')
+            self.german_nlp = spacy.load('de_core_news_lg')
             logger.info("German spaCy model loaded successfully")
         except Exception as e:
             logger.warning(f"German spaCy model not available, using basic tokenizer: {e}")

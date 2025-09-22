@@ -14,6 +14,7 @@ from .services.analysis_engine.claude_client import ClaudeClient
 from .services.export.export_manager import ExportManager
 from .persistence.database import get_database_manager
 from .utils.debug_logger import debug_logger
+from .models.processing_config import ProcessingConfig
 
 # Use enhanced debug logger instead of basic logging
 logger = debug_logger
@@ -57,9 +58,109 @@ class LocalInsightEngine:
 
         logger.info("LocalInsightEngine initialized successfully")
     
+    def analyze_document_with_config(self, document_path: Path, config: ProcessingConfig = None) -> dict:
+        """
+        Analyze a document with ProcessingConfig (new architecture).
+
+        Args:
+            document_path: Path to the document to analyze
+            config: ProcessingConfig object (defaults to standard mode)
+
+        Returns:
+            Analysis results dictionary
+        """
+        if config is None:
+            config = ProcessingConfig.standard_mode()
+
+        logger.performance_start("document_analysis")
+        logger.step("Starting document analysis", {
+            "document": str(document_path),
+            "processing_config": config.to_dict(),
+            "file_size": document_path.stat().st_size if document_path.exists() else "N/A"
+        })
+
+        try:
+            # Layer 1: Load document
+            logger.performance_start("document_loading")
+            document = self.document_loader.load(document_path)
+            logger.performance_end("document_loading", {
+                "document_id": str(document.id),
+                "pages": len(document.page_mapping),
+                "paragraphs": len(document.paragraph_mapping),
+                "characters": len(document.text_content)
+            })
+
+            # Layer 2: Process and neutralize content
+            logger.performance_start("text_processing")
+            processed_data = self.text_processor.process_with_config(document, config)
+            logger.performance_end("text_processing", {
+                "chunks_created": len(processed_data.chunks),
+                "entities_extracted": len(processed_data.all_entities) if hasattr(processed_data, 'all_entities') else 0,
+                "processing_mode": config.processing_mode.value
+            })
+
+            # Log detailed chunk information
+            logger.debug("Text processing completed", {
+                "total_chunks": len(processed_data.chunks),
+                "total_entities": len(processed_data.all_entities) if hasattr(processed_data, 'all_entities') else 0,
+                "key_themes": len(processed_data.key_themes),
+                "processing_time": processed_data.processing_time_seconds
+            })
+
+            # Layer 3: Analyze with LLM
+            logger.performance_start("llm_analysis")
+            analysis = self.llm_client.analyze(processed_data)
+            logger.performance_end("llm_analysis", {
+                "status": analysis.get("status", "unknown"),
+                "insights_count": len(analysis.get("insights", [])),
+                "questions_count": len(analysis.get("questions", []))
+            })
+
+            # Store analysis statistics for GUI access
+            self.last_analysis_statistics = self.text_processor.get_analysis_statistics()
+
+            # Persist analysis results to database for future Q&A sessions
+            if self.db_manager:
+                try:
+                    # Extract factual mode from config for persistence
+                    factual_mode = config.is_factual_mode
+                    self._persist_analysis(document_path, processed_data, analysis, factual_mode)
+                    logger.info("✅ Analysis successfully persisted to database")
+                except Exception as e:
+                    logger.error("Failed to persist analysis to database: %s", e)
+                    # Log additional context for debugging
+                    logger.error("Document path: %s, Factual mode: %s", document_path, config.is_factual_mode)
+                    # Note: Database session cleanup is handled by the repository pattern
+
+            result = {
+                'analysis': analysis,
+                'statistics': {
+                    'chunks': len(processed_data.chunks),
+                    'entities': len(processed_data.all_entities) if hasattr(processed_data, 'all_entities') else 0,
+                    'themes': len(processed_data.key_themes),
+                    'processing_time': processed_data.processing_time_seconds
+                },
+                'processing_config': config.to_dict()
+            }
+
+            logger.info("Document analysis completed successfully")
+            return result
+
+        except Exception as e:
+            logger.error("Document analysis failed", e, {
+                "document": str(document_path),
+                "processing_config": config.to_dict()
+            })
+            raise
+        finally:
+            logger.performance_end("document_analysis")
+
     def analyze_document(self, document_path: Path, factual_mode: bool = False) -> dict:
         """
-        Analyze a document through the 3-layer architecture.
+        Analyze a document through the 3-layer architecture (legacy API).
+
+        DEPRECATED: Use analyze_document_with_config() for new code.
+        This method is maintained for backward compatibility.
 
         Args:
             document_path: Path to the document to analyze
@@ -68,6 +169,20 @@ class LocalInsightEngine:
         Returns:
             Analysis results dictionary
         """
+        # Convert legacy parameter to ProcessingConfig
+        config = ProcessingConfig.from_legacy_params(factual_mode=factual_mode)
+
+        # Add deprecation warning to logs
+        logger.info("DEPRECATED: analyze_document(factual_mode) called. Use analyze_document_with_config() for new code.")
+
+        # Delegate to new implementation
+        result = self.analyze_document_with_config(document_path, config)
+
+        # Remove ProcessingConfig from result for backward compatibility
+        if 'processing_config' in result:
+            del result['processing_config']
+
+        return result
         logger.performance_start("document_analysis")
         logger.step("Starting document analysis", {
             "document": str(document_path),
@@ -143,16 +258,21 @@ class LocalInsightEngine:
             logger.database_operation("Persisting analysis results")
 
             repo = SessionRepository(self.db_manager.get_session())
-            neutralized_context = (
-                processed_data.chunks[0].neutralized_content if processed_data.chunks else ""
-            )
+            # CRITICAL FIX: Combine ALL chunks' semantic triples content for FTS5 search
+            # Previous version only stored first chunk - caused 0 search results!
+            neutralized_context = ""
+            if processed_data.chunks:
+                all_chunk_content = []
+                for i, chunk in enumerate(processed_data.chunks):
+                    if chunk.neutralized_content:
+                        chunk_header = f"=== Chunk {i+1}/{len(processed_data.chunks)} ==="
+                        all_chunk_content.append(f"{chunk_header}\n{chunk.neutralized_content}")
+                neutralized_context = "\n\n".join(all_chunk_content)
+                logger.info(f"Combined {len(processed_data.chunks)} chunks into searchable content ({len(neutralized_context)} chars)")
             created = repo.create_session(
-                document_path=str(document_path),
+                document_path=document_path,
                 analysis_result=analysis,
                 neutralized_context=neutralized_context,
-                factual_mode=factual_mode,
-                chunk_count=len(processed_data.chunks),
-                entity_count=len(getattr(processed_data, "all_entities", [])),
             )
             logger.info("Analysis persisted", {
                 "session_id": getattr(created, "session_id", None),
@@ -281,10 +401,11 @@ Please provide a helpful and accurate answer based only on the document content 
             logger.error("Q&A session failed", e, {"question": question})
             return "Sorry, I could not process your question due to a technical error."
     def analyze_and_export(
-        self, 
-        document_path: Path, 
+        self,
+        document_path: Path,
         output_path: Optional[Path] = None,
-        formats: Optional[list] = None
+        formats: Optional[list] = None,
+        factual_mode: bool = False
     ) -> dict:
         """
         Analyze a document and export results in specified formats.
@@ -293,6 +414,7 @@ Please provide a helpful and accurate answer based only on the document content 
             document_path: Path to the document to analyze
             output_path: Path for export files (without extension)
             formats: List of export formats (default: ["json"])
+            factual_mode: If True, disables anonymization for scientific/factual content
             
         Returns:
             Dictionary with analysis results and export status
@@ -317,7 +439,7 @@ Please provide a helpful and accurate answer based only on the document content 
         
         # Export results
         export_results = self.export_manager.export_analysis(
-            analysis, processed_data, document, output_path, formats
+            analysis, processed_data, document, output_path, formats, factual_mode
         )
         
         logger.info("Analysis and export completed successfully")
@@ -356,7 +478,7 @@ Please provide a helpful and accurate answer based only on the document content 
             formats = ["json"]
             
         return self.export_manager.export_analysis(
-            analysis_result, processed_text, document, output_path, formats
+            analysis_result, processed_text, document, output_path, formats, False
         )
 
     def _search_with_fts5(self, question: str) -> tuple[list[str], str]:

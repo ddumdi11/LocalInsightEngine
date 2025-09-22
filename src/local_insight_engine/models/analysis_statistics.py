@@ -179,8 +179,9 @@ class AnalysisReport(BaseModel):
 
     def get_local_transparency_section(self) -> Dict[str, Any]:
         """Get data for local transparency display (full entity names)."""
+        # Look for either pre_anonymization OR factual_mode_extraction stage
         pre_anon_stage = next(
-            (s for s in self.statistics.extraction_stages if s.stage_name == "pre_anonymization"),
+            (s for s in self.statistics.extraction_stages if s.stage_name in ["pre_anonymization", "factual_mode_extraction"]),
             None
         )
 
@@ -237,4 +238,70 @@ class AnalysisReport(BaseModel):
             "compliance_status": "✅ SAFE" if compliance.transmission_safe else "❌ RISK",
             "warnings": compliance.compliance_warnings,
             "note": "This shows the anonymized data that would be transmitted externally."
+        }
+
+    def get_semantic_triples_section(self) -> Dict[str, Any]:
+        """Get data for semantic triples display (factual mode only)."""
+        import logging
+        logger = logging.getLogger(__name__)
+
+        # Check if semantic triples are available (from factual mode processing)
+        factual_stage = next(
+            (s for s in self.statistics.extraction_stages if s.stage_name == "factual_mode_extraction"),
+            None
+        )
+
+        if not factual_stage:
+            return {"error": "No semantic triples data available (factual mode not active)"}
+
+        # Get triples with proper type hints and default
+        triples: List[Any] = getattr(factual_stage, 'semantic_triples', [])
+
+        # Validate triples and extract sample for display
+        sample_triples: List[Dict[str, Any]] = []
+        validated_triples: List[Any] = []
+        malformed_count: int = 0
+
+        if triples:
+            for triple in triples:
+                # Validate each semantic triple before using its attributes
+                try:
+                    # Check if triple has expected attributes (duck typing)
+                    if (hasattr(triple, 'subject') and
+                        hasattr(triple, 'predicate') and
+                        hasattr(triple, 'object')):
+
+                        validated_triples.append(triple)
+
+                        # Build sample (max 20 validated entries)
+                        if len(sample_triples) < 20:
+                            sample_triples.append({
+                                "subject": getattr(triple, 'subject', 'Unknown'),
+                                "predicate": getattr(triple, 'predicate', 'Unknown'),
+                                "object": getattr(triple, 'object', 'Unknown'),
+                                "confidence": getattr(triple, 'confidence', 0.0),
+                                "source_info": getattr(triple, 'source_chunk_id', 'Unknown')
+                            })
+                    else:
+                        malformed_count += 1
+                        logger.warning(f"Skipping malformed semantic triple: {type(triple)}")
+
+                except Exception as e:
+                    malformed_count += 1
+                    logger.error(f"Error validating semantic triple: {e}")
+
+        # Log malformed entries if any found
+        if malformed_count > 0:
+            logger.warning(f"Found {malformed_count} malformed semantic triples out of {len(triples)} total")
+
+        # Compute total from validated list
+        total_triples: int = len(validated_triples)
+
+        return {
+            "title": "🧠 EXTRACTED SEMANTIC TRIPLES (FACTUAL MODE)",
+            "total_triples": total_triples,
+            "confidence_range": [0.7, 0.95] if validated_triples else [0.0, 0.0],
+            "triples": sample_triples,
+            "malformed_count": malformed_count,
+            "note": "Semantic triples extracted in factual mode represent structured knowledge from the document."
         }

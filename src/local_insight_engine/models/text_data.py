@@ -11,16 +11,19 @@ from pydantic import BaseModel, Field
 
 class EntityData(BaseModel):
     """Named entity extracted from text."""
-    
+
     text: str
     label: str  # PERSON, ORG, GPE, etc.
     confidence: float = Field(ge=0.0, le=1.0)
     start_char: int
     end_char: int
-    
+
     # Source tracking for copyright compliance
     source_paragraph_id: Optional[int] = None
     source_page: Optional[int] = None
+
+    # For Entity Equivalence Mapping (optional)
+    source_sentence: Optional[str] = None
 
 
 class TextChunk(BaseModel):

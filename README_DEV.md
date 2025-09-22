@@ -28,6 +28,67 @@ Vollständig funktionsfähige Python-Anwendung zur copyright-compliant Dokumente
 - **🔍 File-Type Validation**: Erkennt echten Dateityp unabhängig von Extension
 - **📊 Vollständige Nachverfolgbarkeit**: Jede Erkenntnis zurück zur Quelle verfolgbar
 - **🧪 Umfassende Tests**: Unit-, Integration- und Multi-Language Tests
+
+## 🚀 Next Generation: Semantic Triples Pipeline (In Development)
+
+### 🧠 Aussagenlogische Architektur Vision
+
+**Problem:** Aktuelle Neutralisierung verliert semantische Beziehungen und Kontext für präzise Q&A.
+
+**Lösung:** Transformation von Sätzen in aussagenlogische **Semantic Triples** für wissenschaftliche Sachbücher.
+
+### 📐 Evolution Path
+
+```mermaid
+graph LR
+    A[Phase 1: Semantic Triples] --> B[Phase 2: Hybrid Natural Logic]
+    B --> C[Phase 3: Prädikatenlogik]
+
+    A1[2-4 Wochen] --> B1[3-6 Wochen]
+    B1 --> C1[6+ Monate]
+```
+
+### 🔄 Dual-Pipeline Architektur
+
+**Branch:** `feature/aussagenlogische-sachbuch-pipeline`
+
+```python
+# Belletristik (Urheberrechtsschutz)
+if literary_mode:
+    neutralized = neutralize_content(text)
+
+# Sachbücher (Wissenschaftliche Fakten)
+if factual_mode:
+    triples = extract_semantic_triples(text)
+```
+
+### 🎯 Semantic Triples Format
+
+**Input:** "Vitamin B3 unterstützt den Energiestoffwechsel und ist wasserlöslich."
+
+**Output:**
+```python
+[
+    ("Vitamin_B3", "supports", "Energy_Metabolism"),
+    ("Vitamin_B3", "has_property", "water_soluble"),
+    ("Vitamin_B3", "is_type_of", "B_Vitamin"),
+    ("Energy_Metabolism", "occurs_in", "Human_Body")
+]
+```
+
+**Vorteile:**
+- 🧩 **Puzzle-Übergabe**: Unzusammenhängende Facts ans LLM
+- ⚖️ **Urheberrechtsschutz**: Keine originale Satzstruktur
+- 🎯 **Präzise Q&A**: Semantische Beziehungen erhalten
+- 🔍 **Lakmus-Test**: "Vitamin B3" Informationen vollständig abrufbar
+
+### 🏗️ Implementation Status
+
+- ✅ **Bugfixes**: Entity-Neutralisierung im Sachbuch-Modus deaktiviert
+- ✅ **UI Integration**: Analysis Report zeigt 2600+ Entities korrekt
+- 🚧 **FactTripletExtractor**: Neue Klasse für Semantic Triple Extraction
+- 🚧 **Dual Pipeline**: Erweiterte `text_processor.py` für beide Modi
+- 📋 **Testing**: Vitamin B3 Lackmus-Test mit Triples
 - **⚡ Produktionsreif**: Moderne Python-Architektur mit Code Quality
 
 ## 🏛️ Architektur
@@ -121,11 +182,29 @@ Start.bat --help
 ```
 
 ### Tests & Validierung (innerhalb aktivierter venv)
+
+#### 🚀 End-to-End (E2E) Workflow Tests - NEUE TEST-KATEGORIE
+```bash
+# Komplette User-Workflow-Validierung (Sachbuch-Modus + Q&A + Reports)
+python -m pytest tests/e2e/ -v -s
+
+# Spezifische E2E Workflow Tests
+python -m pytest tests/e2e/test_complete_user_workflow.py::TestCompleteUserWorkflow::test_complete_sachbuch_analysis_workflow -v -s
+python -m pytest tests/e2e/test_complete_user_workflow.py::TestCompleteUserWorkflow::test_qa_session_workflow -v -s
+
+# E2E Tests mit detailliertem Logging
+python -m pytest tests/e2e/ --log-cli-level=DEBUG -v -s
+
+# ALLE Tests (Unit + E2E) in TDD-Reihenfolge - TEST ORCHESTRATOR
+python tests/test_orchestrator.py
+```
+
+#### 🧪 Unit & Integration Tests
 ```bash
 # Multi-Format Test (TXT bevorzugt, PDF Fallback) - EMPFOHLEN
 python tests/test_multiformat.py
 
-# Multi-Language Test (Deutsch & Englisch)  
+# Multi-Language Test (Deutsch & Englisch)
 python tests/test_multilanguage.py
 
 # File-Type Detection & Validation
@@ -140,6 +219,21 @@ python tests/test_claude_debug.py
 # Legacy PDF-only Test
 python tests/test_pdf_processing.py
 ```
+
+#### 🎯 Was E2E Tests validieren
+- ✅ **Komplette Sachbuch-Analyse**: Datei auswählen → Analysieren → Ergebnisse
+- ✅ **Q&A Session Workflow**: Dokument verarbeiten → Fragen stellen → Antworten erhalten
+- ✅ **Analysis Report Generation**: Analyse → Report erstellen → Export
+- ✅ **Database Persistence**: SQLite/FTS5 Operations während kompletter Workflows
+- ✅ **Error Handling**: Graceful Failure-Szenarien Ende-zu-Ende
+
+#### 📊 Test-Kategorien Übersicht
+| Test-Typ | Zweck | Geschwindigkeit | Ausführung |
+|----------|-------|-----------------|------------|
+| **Unit Tests** | Komponenten-Tests | Sehr schnell | Kontinuierlich |
+| **Integration Tests** | Layer-Integration | Schnell | Bei Änderungen |
+| **E2E Tests** | User-Workflow | Langsamer | Vor Releases |
+| **Test Orchestrator** | Alle in TDD-Reihenfolge | Vollständig | Nach größeren Änderungen |
 
 ### Programmatische Nutzung
 ```python

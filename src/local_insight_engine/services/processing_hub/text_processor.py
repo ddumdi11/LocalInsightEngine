@@ -11,9 +11,12 @@ from datetime import datetime
 from ...models.document import Document
 from ...models.text_data import ProcessedText, TextChunk, EntityData
 from ...models.analysis_statistics import DocumentAnalysisStatistics
+from ...models.processing_config import ProcessingConfig
 from .spacy_statement_extractor import SpacyStatementExtractor
 from .spacy_entity_extractor import SpacyEntityExtractor
 from .statistics_collector import StatisticsCollector
+from .fact_triplet_extractor import FactTripletExtractor
+from .entity_equivalence_mapper import EntityEquivalenceMapper
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +35,16 @@ class TextProcessor:
         self.statement_extractor = SpacyStatementExtractor()
         self.entity_extractor = SpacyEntityExtractor()
         self.statistics_collector = StatisticsCollector()
+        self.fact_triplet_extractor = FactTripletExtractor()
+        self.entity_mapper = EntityEquivalenceMapper()
         
-    def process(self, document: Document, bypass_anonymization: bool = False) -> ProcessedText:
+    def process_with_config(self, document: Document, config: ProcessingConfig) -> ProcessedText:
         """
-        Process document content into neutralized chunks with comprehensive statistics.
+        Process document content with ProcessingConfig (new architecture).
 
         Args:
             document: Original document from Layer 1
-            bypass_anonymization: If True, skips anonymization for factual content
+            config: ProcessingConfig object
 
         Returns:
             ProcessedText with neutralized content safe for external APIs
@@ -55,33 +60,40 @@ class TextProcessor:
             text_length=len(document.text_content)
         )
         self.statistics_collector.set_processing_config(
-            factual_mode=bypass_anonymization,
-            bypass_anonymization=bypass_anonymization
+            factual_mode=config.is_factual_mode,
+            bypass_anonymization=config.bypass_anonymization
         )
-        logger.info(f"Processing document: {document.metadata.file_path}")
-        
+        logger.info(f"Processing document with config: {config}")
+
         # Split text into overlapping chunks
         chunks = self._create_chunks(document)
-        
+
         # Process each chunk
         processed_chunks = []
         all_entities = []
         all_statements = []
-        
+
         for chunk_data in chunks:
-            processed_chunk = self._process_chunk(chunk_data, document.id, bypass_anonymization)
+            processed_chunk = self._process_chunk_with_config(chunk_data, document.id, config)
             processed_chunks.append(processed_chunk)
             all_entities.extend(processed_chunk.entities)
             all_statements.extend(processed_chunk.key_statements)
-        
+
         # Extract global themes and summary
         key_themes = self._extract_themes(all_statements)
         summary_statements = self._create_summary_statements(all_statements)
-        
+
+        # Discover entity equivalences for better fact extraction
+        if config.enable_entity_equivalence and config.bypass_anonymization:
+            logger.info(f"Discovering entity equivalences from {len(all_entities)} entities")
+            self.entity_mapper.discover_document_equivalences(all_entities)
+            equivalence_report = self.entity_mapper.get_equivalence_report()
+            logger.info(f"Found {equivalence_report['dynamic_equivalences_discovered']} dynamic equivalences")
+
         processing_time = (datetime.now() - start_time).total_seconds()
 
         # Record comprehensive entity statistics
-        self._collect_entity_statistics(all_entities, chunks, processing_time, bypass_anonymization)
+        self._collect_entity_statistics_with_config(all_entities, chunks, processing_time, config)
 
         return ProcessedText(
             source_document_id=document.id,
@@ -92,6 +104,74 @@ class TextProcessor:
             total_chunks=len(processed_chunks),
             total_entities=len(all_entities),
             processing_time_seconds=processing_time
+        )
+
+    def process(self, document: Document, bypass_anonymization: bool = False) -> ProcessedText:
+        """
+        Process document content into neutralized chunks (legacy API).
+
+        DEPRECATED: Use process_with_config() for new code.
+        This method is maintained for backward compatibility.
+
+        Args:
+            document: Original document from Layer 1
+            bypass_anonymization: If True, skips anonymization for factual content
+
+        Returns:
+            ProcessedText with neutralized content safe for external APIs
+        """
+        # Convert legacy parameter to ProcessingConfig
+        config = ProcessingConfig.from_legacy_params(bypass_anonymization=bypass_anonymization)
+
+        # Add deprecation warning to logs
+        logger.info("DEPRECATED: TextProcessor.process(bypass_anonymization) called. Use process_with_config() for new code.")
+
+        # Delegate to new implementation
+        return self.process_with_config(document, config)
+
+    def _process_chunk_with_config(self, chunk_data: Dict, document_id, config: ProcessingConfig) -> TextChunk:
+        """Process a single chunk into neutralized content with ProcessingConfig."""
+        original_text = chunk_data['text']
+
+        # Extract key statements (neutralized)
+        key_statements = self.statement_extractor.extract_statements(original_text)
+
+        # Extract entities with positions
+        entities = self.entity_extractor.extract_entities(
+            original_text,
+            chunk_data['source_paragraphs'],
+            chunk_data['source_pages'],
+            bypass_anonymization=config.bypass_anonymization
+        )
+
+        # DUAL PIPELINE: Choose processing method based on mode
+        if config.bypass_anonymization:
+            # SEMANTIC TRIPLES PIPELINE for factual content
+            semantic_triples = self.fact_triplet_extractor.extract_triples_from_chunk(
+                text=original_text,
+                chunk_id=str(chunk_data['id']),
+                document_id=document_id,
+                source_paragraphs=chunk_data['source_paragraphs'],
+                source_pages=chunk_data['source_pages'],
+                original_char_range=chunk_data['char_range'],
+                word_count=len(original_text.split())
+            )
+            # Use structured facts instead of neutralized content
+            neutralized_content = semantic_triples.to_fact_text()
+            logger.debug(f"Extracted {len(semantic_triples.triples)} semantic triples from factual chunk")
+        else:
+            # CLASSIC NEUTRALIZATION PIPELINE for literary content
+            neutralized_content = self._neutralize_content(key_statements, entities, original_text, config.bypass_anonymization)
+
+        return TextChunk(
+            neutralized_content=neutralized_content,
+            key_statements=key_statements,
+            entities=entities,
+            source_document_id=document_id,
+            source_paragraphs=chunk_data['source_paragraphs'],
+            source_pages=chunk_data['source_pages'],
+            original_char_range=chunk_data['char_range'],
+            word_count=len(original_text.split())
         )
     
     def _create_chunks(self, document: Document) -> List[Dict]:
@@ -153,8 +233,24 @@ class TextProcessor:
             bypass_anonymization=bypass_anonymization
         )
 
-        # Create neutralized content by combining key statements AND neutralized text
-        neutralized_content = self._neutralize_content(key_statements, entities, original_text, bypass_anonymization)
+        # DUAL PIPELINE: Choose processing method based on mode
+        if bypass_anonymization:
+            # SEMANTIC TRIPLES PIPELINE for factual content
+            semantic_triples = self.fact_triplet_extractor.extract_triples_from_chunk(
+                text=original_text,
+                chunk_id=str(chunk_data['id']),
+                document_id=document_id,
+                source_paragraphs=chunk_data['source_paragraphs'],
+                source_pages=chunk_data['source_pages'],
+                original_char_range=chunk_data['char_range'],
+                word_count=len(original_text.split())
+            )
+            # Use structured facts instead of neutralized content
+            neutralized_content = semantic_triples.to_fact_text()
+            logger.debug(f"Extracted {len(semantic_triples.triples)} semantic triples from factual chunk")
+        else:
+            # CLASSIC NEUTRALIZATION PIPELINE for literary content
+            neutralized_content = self._neutralize_content(key_statements, entities, original_text, bypass_anonymization)
 
         return TextChunk(
             neutralized_content=neutralized_content,
@@ -312,6 +408,29 @@ class TextProcessor:
             entities=all_entities,
             processing_time=processing_time,
             anonymization_applied=not bypass_anonymization
+        )
+
+        # End timing
+        self.statistics_collector.end_timer("text_processing")
+
+    def _collect_entity_statistics_with_config(self, all_entities: List[EntityData], chunks: List[Dict],
+                                              processing_time: float, config: ProcessingConfig):
+        """Collect comprehensive entity extraction statistics with ProcessingConfig."""
+
+        # Record chunk statistics
+        chunk_sizes = [len(chunk.get('text', '')) for chunk in chunks]
+        self.statistics_collector.record_chunk_statistics(len(chunks), chunk_sizes)
+
+        # Record entity extraction stage (this represents the final merged entities)
+        # For now, we're treating this as "post_anonymization" stage since entities have been processed
+        stage_name = "post_anonymization" if not config.bypass_anonymization else "factual_mode_extraction"
+
+        self.statistics_collector.record_entity_extraction_stage(
+            stage_name=stage_name,
+            process_name="SpacyEntityExtractor",
+            entities=all_entities,
+            processing_time=processing_time,
+            anonymization_applied=not config.bypass_anonymization
         )
 
         # End timing

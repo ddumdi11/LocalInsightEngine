@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=200, env="CHUNK_OVERLAP")
     
     # NER settings
-    spacy_model: str = Field(default="de_core_news_sm", env="SPACY_MODEL")
+    spacy_model: str = Field(default="de_core_news_lg", env="SPACY_MODEL")
     
     # External API settings
     llm_api_key: Optional[str] = Field(default=None, env="LLM_API_KEY")
