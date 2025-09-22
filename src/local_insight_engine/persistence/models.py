@@ -116,8 +116,18 @@ class PersistentQASession(Base):
         if value is None:
             self.analysis_result_json = '{}'
         else:
-            # Convert Pydantic model to dict for JSON serialization
-            self.analysis_result_json = value.model_dump_json()
+            # Handle both Pydantic models and dict objects
+            if hasattr(value, 'model_dump_json'):
+                # Pydantic model
+                self.analysis_result_json = value.model_dump_json()
+            elif isinstance(value, dict):
+                # Dictionary object
+                import json
+                self.analysis_result_json = json.dumps(value)
+            else:
+                # Other objects - try to convert to dict first
+                import json
+                self.analysis_result_json = json.dumps(dict(value) if hasattr(value, '__dict__') else str(value))
 
     @property
     def expires_at(self) -> datetime:
