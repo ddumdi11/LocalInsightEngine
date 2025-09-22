@@ -70,6 +70,12 @@ class SessionRepository:
             document_hash = self._generate_document_hash(document_path)
             path_hash = self._generate_path_hash(canonical_path)
 
+            # Check if session already exists for this document
+            existing_session = self.get_session_by_document_hash(document_hash)
+            if existing_session:
+                logger.info(f"Session already exists for document hash {document_hash}, returning existing session")
+                return existing_session
+
             # Create session
             qa_session = PersistentQASession(
                 document_path_hash=path_hash,
