@@ -5,6 +5,8 @@ Working Entity Equivalence Test - No Pydantic complications
 
 import sys
 import logging
+import traceback
+from typing import Optional
 
 sys.path.append('src')
 
@@ -17,8 +19,8 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    print("🧬 WORKING ENTITY EQUIVALENCE TEST")
-    print("=" * 45)
+    logger.info("🧬 WORKING ENTITY EQUIVALENCE TEST")
+    logger.info("=" * 45)
 
     # Initialize mapper
     logger.info("🔧 Initializing EntityEquivalenceMapper...")
@@ -30,8 +32,8 @@ def main() -> None:
         sys.exit(1)
 
     # Test 1: Predefined equivalences (we know this works)
-    print("\n📚 PREDEFINED EQUIVALENCES TEST:")
-    print("-" * 35)
+    logger.info("\n📚 PREDEFINED EQUIVALENCES TEST:")
+    logger.info("-" * 35)
 
     test_names = [
         "Niacin",
@@ -48,20 +50,28 @@ def main() -> None:
     for name in test_names:
         resolved = mapper.resolve_entity_name(name)
         status = "✅" if resolved != name.replace(" ", "_") else "➡️"
-        print(f"   {status} '{name}' → '{resolved}'")
+        logger.info(f"   {status} '{name}' → '{resolved}'")
 
     # Test 2: Simple mock objects (not Pydantic)
-    print("\n🔍 MOCK ENTITY TEST (No Pydantic):")
-    print("-" * 40)
+    logger.info("\n🔍 MOCK ENTITY TEST (No Pydantic):")
+    logger.info("-" * 40)
 
     class MockEntity:
         """Simple mock entity class that allows dynamic attributes"""
-        def __init__(self, text, label, source_sentence=None):
-            self.text = text
-            self.label = label
-            self.source_sentence = source_sentence
-            self.source_paragraph_id = 1
-            self.source_page = 1
+
+        def __init__(
+            self,
+            text: str,
+            label: str,
+            source_sentence: Optional[str] = None,
+            source_paragraph_id: int = 1,
+            source_page: int = 1
+        ) -> None:
+            self.text: str = text
+            self.label: str = label
+            self.source_sentence: Optional[str] = source_sentence
+            self.source_paragraph_id: int = source_paragraph_id
+            self.source_page: int = source_page
 
     # Create mock entities with source sentences
     mock_entities = [
@@ -69,42 +79,41 @@ def main() -> None:
         MockEntity("Niacin", "NUTRIENT", "Niacin, auch bekannt als Vitamin B3, unterstützt den Körper.")
     ]
 
-    print("📝 Mock entities created with source sentences:")
+    logger.info("📝 Mock entities created with source sentences:")
     for i, entity in enumerate(mock_entities, 1):
-        print(f"   {i}. {entity.text}: '{entity.source_sentence}'")
+        logger.info(f"   {i}. {entity.text}: '{entity.source_sentence}'")
 
     # Test 3: Try document equivalence discovery with mock entities
-    print("\n🔬 DYNAMIC EQUIVALENCE DISCOVERY:")
-    print("-" * 35)
+    logger.info("\n🔬 DYNAMIC EQUIVALENCE DISCOVERY:")
+    logger.info("-" * 35)
 
     try:
         mapper.discover_document_equivalences(mock_entities)
-        print("✅ Discovery completed without errors!")
+        logger.info("✅ Discovery completed without errors!")
 
         # Check discovered equivalences
         dynamic_equiv = mapper.dynamic_equivalences
-        print(f"📊 Found {len(dynamic_equiv)} dynamic equivalences:")
+        logger.info(f"📊 Found {len(dynamic_equiv)} dynamic equivalences:")
         for alt_name, primary_name in dynamic_equiv.items():
-            print(f"   🔗 '{alt_name}' → '{primary_name}'")
+            logger.info(f"   🔗 '{alt_name}' → '{primary_name}'")
 
     except Exception as e:
-        print(f"❌ Discovery failed: {e}")
-        import traceback
+        logger.error(f"❌ Discovery failed: {e}")
         traceback.print_exc()
 
     # Test 4: Resolution after discovery
-    print("\n🎯 RESOLUTION TEST AFTER DISCOVERY:")
-    print("-" * 40)
+    logger.info("\n🎯 RESOLUTION TEST AFTER DISCOVERY:")
+    logger.info("-" * 40)
 
     test_variants = ["Niacin", "Vitamin B3", "vitamin b3", "NIACIN", "B3"]
 
     for variant in test_variants:
         resolved = mapper.resolve_entity_name(variant)
-        print(f"   🔍 '{variant}' → '{resolved}'")
+        logger.info(f"   🔍 '{variant}' → '{resolved}'")
 
     # Test 5: Vitamin B3 variant test
-    print("\n🧪 VITAMIN B3 VARIANT RESOLUTION:")
-    print("-" * 35)
+    logger.info("\n🧪 VITAMIN B3 VARIANT RESOLUTION:")
+    logger.info("-" * 35)
 
     vitamin_b3_variants = [
         "Vitamin B3", "Niacin", "Vitamin B-3", "B3-Vitamin",
@@ -116,19 +125,19 @@ def main() -> None:
         resolved = mapper.resolve_entity_name(variant)
         is_correct = resolved == "Vitamin_B3"
         status = "✅" if is_correct else "❌"
-        print(f"   {status} '{variant}' → '{resolved}'")
+        logger.info(f"   {status} '{variant}' → '{resolved}'")
         if not is_correct:
             all_correct = False
 
-    print()
+    logger.info("")
     if all_correct:
-        print("🎉 SUCCESS: All Vitamin B3 variants correctly resolved!")
-        print("💡 Ready for integration into FactTripletExtractor!")
+        logger.info("🎉 SUCCESS: All Vitamin B3 variants correctly resolved!")
+        logger.info("💡 Ready for integration into FactTripletExtractor!")
     else:
-        print("⚠️  Some variants not resolved correctly")
+        logger.warning("⚠️  Some variants not resolved correctly")
 
-    print("\n🎯 Entity Equivalence Mapping test complete!")
-    print("   Core system works perfectly! 🚀")
+    logger.info("\n🎯 Entity Equivalence Mapping test complete!")
+    logger.info("   Core system works perfectly! 🚀")
 
 
 if __name__ == "__main__":

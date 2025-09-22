@@ -254,6 +254,75 @@ def test_repository_operations() -> None:
             pass  # Ignore cleanup errors
 
 
+def test_analysis_persistence() -> None:
+    """Test analysis persistence success and failure scenarios."""
+    print("TESTING: Analysis persistence...")
+
+    # Use temporary database for testing
+    with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp:
+        tmp_path = Path(tmp.name)
+
+    try:
+        # Setup
+        db_manager = DatabaseManager(tmp_path)
+        db_manager.create_tables()
+
+        # Mock processed data
+        class MockChunk:
+            def __init__(self, content):
+                self.neutralized_content = content
+
+        class MockProcessedData:
+            def __init__(self):
+                self.chunks = [
+                    MockChunk("Test chunk 1: Vitamin B3 analysis"),
+                    MockChunk("Test chunk 2: Nutrition facts")
+                ]
+
+        # Test successful persistence
+        from local_insight_engine.main import LocalInsightEngine
+        engine = LocalInsightEngine(db_path=tmp_path)
+
+        # Create test document
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as doc:
+            doc.write("Test document about vitamins.")
+            doc_path = Path(doc.name)
+
+        try:
+            # Test successful persistence
+            processed_data = MockProcessedData()
+            analysis = {
+                "insights": [{"title": "Test", "content": "Analysis"}],
+                "themes": ["vitamins"]
+            }
+
+            # This should succeed
+            engine._persist_analysis(doc_path, processed_data, analysis, True)
+            print("SUCCESS: Analysis persistence succeeded")
+
+            # Test failure scenario with invalid data
+            try:
+                # Pass None as processed_data to trigger exception
+                engine._persist_analysis(doc_path, None, analysis, True)
+                print("FAILURE: Expected exception not raised")
+            except Exception as e:
+                print(f"SUCCESS: Persistence failure handled gracefully: {e}")
+
+        finally:
+            if doc_path.exists():
+                doc_path.unlink()
+
+    finally:
+        # Cleanup
+        try:
+            if 'db_manager' in locals():
+                db_manager.engine.dispose()
+            if tmp_path.exists():
+                tmp_path.unlink()
+        except Exception:
+            pass
+
+
 def run_all_tests() -> bool:
     """Run all persistence tests."""
     print("PERSISTENCE LAYER TESTS")
@@ -265,6 +334,8 @@ def run_all_tests() -> bool:
         test_model_creation()
         print()
         test_repository_operations()
+        print()
+        test_analysis_persistence()
         print()
         print("ALL PERSISTENCE TESTS PASSED!")
         return True

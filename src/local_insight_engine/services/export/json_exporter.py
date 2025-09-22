@@ -29,7 +29,8 @@ class JsonExporter:
         analysis_result: Dict[str, Any],
         processed_text: ProcessedText,
         document: Document,
-        output_path: Path
+        output_path: Path,
+        factual_mode: bool = False
     ) -> bool:
         """
         Export complete analysis results to JSON.
@@ -39,6 +40,7 @@ class JsonExporter:
             processed_text: Processed text data from Layer 2
             document: Original document metadata from Layer 1
             output_path: Path where to save the JSON file
+            factual_mode: If True, indicates neutralization was bypassed
             
         Returns:
             True if export successful, False otherwise
@@ -48,7 +50,7 @@ class JsonExporter:
             
             # Create comprehensive export structure
             export_data = self._build_export_structure(
-                analysis_result, processed_text, document
+                analysis_result, processed_text, document, factual_mode
             )
             
             # Ensure output directory exists
@@ -69,7 +71,8 @@ class JsonExporter:
         self,
         analysis_result: Dict[str, Any],
         processed_text: ProcessedText,
-        document: Document
+        document: Document,
+        factual_mode: bool = False
     ) -> Dict[str, Any]:
         """Build the comprehensive export data structure."""
         
@@ -138,9 +141,9 @@ class JsonExporter:
             # Privacy and compliance info
             "compliance": {
                 "copyright_compliant": True,
-                "contains_original_text": False,
-                "neutralization_applied": True,
-                "note": "This export contains only neutralized, processed content. No original copyrighted text is included."
+                "contains_original_text": factual_mode,
+                "neutralization_applied": not factual_mode,
+                "note": "Factual mode: preserves scientific terms." if factual_mode else "This export contains only neutralized, processed content. No original copyrighted text is included."
             }
         }
     

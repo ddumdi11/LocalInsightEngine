@@ -64,7 +64,7 @@ class SpacyEntityExtractor:
     def _load_models(self):
         """Load spaCy language models and add custom entity patterns."""
         try:
-            self.german_nlp = spacy.load('de_core_news_sm')
+            self.german_nlp = spacy.load('de_core_news_lg')
             logger.info("German model loaded successfully")
 
             # Add custom entity patterns for vitamins, nutrients, and health terms
@@ -138,7 +138,7 @@ class SpacyEntityExtractor:
         ruler.add_patterns(patterns)
         logger.info(f"Added {len(patterns)} custom entity patterns for vitamins and nutrients")
 
-    def extract_entities(self, text: str, source_paragraphs: List[int], source_pages: List[int], bypass_anonymization: bool = False) -> List[EntityData]:
+    def extract_entities(self, text: str, source_paragraphs: List[int], source_pages: List[int], bypass_anonymization: bool = False, source_sentence: Optional[str] = None) -> List[EntityData]:
         """
         Extract named entities using spaCy.
 
@@ -197,7 +197,8 @@ class SpacyEntityExtractor:
                         start_char=ent.start_char,
                         end_char=ent.end_char,
                         source_paragraph_id=source_paragraphs[0] if source_paragraphs else None,
-                        source_page=source_pages[0] if source_pages else None
+                        source_page=source_pages[0] if source_pages else None,
+                        source_sentence=source_sentence or text  # Use provided sentence or full text
                     )
                     entities.append(entity)
             

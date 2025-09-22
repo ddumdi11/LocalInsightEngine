@@ -1,0 +1,6 @@
+@echo off
+echo Setting CI environment variable to true...
+set CI=true
+echo Launching Visual Studio Code...
+code .
+echo Visual Studio Code launched.

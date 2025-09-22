@@ -62,6 +62,27 @@ The project uses industry-standard tools and follows best practices for scalable
 - ⚖️ **Legal Safety**: User-controlled, copyright-compliant by design
 - 🎯 **Precise Results**: Full detail for factual content analysis
 
+### ✅ SEMANTIC TRIPLES GUI INTEGRATION (September 2025)
+**Status:** NEW FEATURE - Complete GUI integration for semantic triples ✅
+**Solution:** Full GUI support for semantic triples extraction and display in factual mode
+- Added new "🧠 Semantic Triples" tab in Analysis Report window
+- Smart conditional display: tab appears only when factual mode is active
+- Complete export integration: PDF, Markdown, JSON all include semantic triples
+- **Result:** Professional GUI for semantic knowledge extraction
+
+**Technical Implementation:**
+- `gui/analysis_report_window.py`: New semantic triples tab with structured display
+- `models/analysis_statistics.py`: Added `get_semantic_triples_section()` method
+- `services/processing_hub/text_processor.py`: Fixed ProcessingConfig integration bugs
+- `main.py`: Fixed analysis statistics storage for GUI accessibility
+- **Critical Fixes:** Resolved "document not defined" and "no analysis statistics" errors
+
+**Benefits:**
+- 🧠 **Knowledge Visualization**: Structured display of extracted semantic relationships
+- 🎛️ **Mode-Aware UI**: Tab appears only in appropriate contexts (factual mode)
+- 📊 **Complete Reporting**: All export formats include semantic triples data
+- 🔧 **Production Ready**: Robust error handling and state management
+
 ### ✅ ANONYMIZATION COMPLIANCE ACHIEVED (September 2025)
 **Status:** RESOLVED - All canary phrase tests now passing ✅
 **Solution:** Implemented intelligent entity neutralization in spaCy Entity Extractor
@@ -202,6 +223,118 @@ print(f"Found {len(search_results)} semantic matches")
 11. **Enhanced Logging** - use performance tracking and detailed debugging for all operations
 12. **Configuration Management** - use localinsightengine.conf for system settings
 
+## Test-Driven Development (TDD) Workflow
+
+### Established TDD Process (September 2025)
+
+**CRITICAL: Systematic RED-GREEN-REFACTOR Cycle**
+
+1. **RED Phase - Write Failing Test First**
+   ```bash
+   # Create test that describes desired behavior (should fail)
+   python -m pytest test_new_feature.py::test_specific_case -v -s
+   ```
+
+2. **GREEN Phase - Implement Minimal Solution**
+   ```bash
+   # Write minimal code to make test pass
+   python -m pytest test_new_feature.py::test_specific_case -v -s
+   ```
+
+3. **REFACTOR Phase - Improve Code Quality**
+   ```bash
+   # Clean up code while keeping tests green
+   python -m pytest test_new_feature.py -v  # Run all tests in file
+   ```
+
+4. **INTEGRATION Phase - Add to Test Orchestrator**
+   ```bash
+   # ONLY when ALL tests in file are green
+   python -m pytest test_orchestrator.py -v -s
+   ```
+
+### TDD Anti-Patterns to Avoid ⚠️
+
+**NEVER:**
+- ❌ **Guess test names** - always use `pytest --collect-only` first
+- ❌ **Guess class methods** - always check actual class definition
+- ❌ **Add incomplete test files** to orchestrator
+- ❌ **Skip RED phase** - tests must fail first
+- ❌ **Batch multiple changes** without testing each step
+
+**ALWAYS:**
+- ✅ **Verify test names exist** before referencing them
+- ✅ **Check actual class APIs** before writing tests
+- ✅ **Complete entire test file** before orchestrator integration
+- ✅ **Run tests after each change** to ensure progress
+- ✅ **Stop and debug** when tests behave unexpectedly
+
+### Test Orchestrator Rules
+
+**Test File Inclusion Policy:**
+- Test files are added to `test_orchestrator.py` ONLY when **ALL tests in that file are green**
+- Partially completed test files remain excluded until fully functional
+- This prevents "false green" signals and maintains stable baseline
+
+**Current Status:**
+- ✅ `test_entity_equivalence.py` - 8/8 tests green → **IN ORCHESTRATOR**
+- ✅ `test_content_flow.py` - 5/5 tests green → **IN ORCHESTRATOR**
+- ✅ `test_semantic_triples.py` - 9/9 tests green → **IN ORCHESTRATOR**
+- ✅ `tests/e2e/test_complete_user_workflow.py` - 5/5 E2E tests → **IN ORCHESTRATOR**
+
+### Debug-First Approach
+
+When tests fail unexpectedly:
+1. **Create debug scripts** to understand actual behavior
+2. **Use `--collect-only`** to verify test names exist
+3. **Check class definitions** for actual method signatures
+4. **Never guess** - always verify facts first
+
+**Example Debug Script Pattern:**
+```python
+# debug/debug_specific_issue.py
+print("ACTUAL BEHAVIOR DEBUG")
+# Test actual class behavior, don't assume anything
+```
+
+### End-to-End (E2E) Testing in TDD
+
+**E2E Test Philosophy:**
+- E2E tests validate **complete user workflows** from start to finish
+- Written AFTER unit tests are green to validate integration
+- Test real scenarios users will encounter in production
+- Complement unit tests with full-system validation
+
+**E2E Test Structure:**
+```
+tests/e2e/
+├── __init__.py
+├── README.md                    # E2E test documentation
+└── test_complete_user_workflow.py    # Complete user journeys
+```
+
+**E2E Test Categories:**
+1. **Sachbuch Analysis Workflow**: Document selection → Factual analysis → Results
+2. **Q&A Session Workflow**: Document analysis → Question asking → Answer generation
+3. **Analysis Report Workflow**: Analysis completion → Report generation → Export
+4. **Persistence Workflow**: Database operations throughout complete workflows
+5. **Error Handling Workflow**: Graceful failure scenarios end-to-end
+
+**When to Write E2E Tests:**
+- ✅ **After** unit tests are completely green
+- ✅ **Before** major feature releases
+- ✅ **When** user workflows change significantly
+- ✅ **To catch** integration issues between layers
+
+**E2E Test Execution:**
+```bash
+# Run E2E tests separately (slower)
+python -m pytest tests/e2e/ -v -s
+
+# Run ALL tests (unit + E2E) in TDD order
+python tests/test_orchestrator.py
+```
+
 ## Development Commands
 
 ### Environment Management
@@ -250,6 +383,26 @@ print(f"Found {len(search_results)} semantic matches")
 - `python -m pytest -x` - Stop on first failure
 - `python -m pytest -k "test_name"` - Run specific test by name
 - `python -m unittest` - Run tests with unittest
+
+### End-to-End (E2E) Testing Commands
+
+**E2E Tests - Complete User Workflow Validation:**
+- `python -m pytest tests/e2e/ -v -s` - Run all E2E tests with detailed output
+- `python -m pytest tests/e2e/test_complete_user_workflow.py -v -s` - Run complete workflow tests
+- `python -m pytest tests/e2e/ --log-cli-level=DEBUG -v -s` - Run E2E tests with detailed logging
+- `python tests/test_orchestrator.py` - Run ALL tests including E2E in TDD order
+
+**What E2E Tests Validate:**
+- ✅ Complete Sachbuch-Modus analysis pipeline (document → analysis → results)
+- ✅ Q&A session workflow with real document processing
+- ✅ Analysis report generation end-to-end
+- ✅ Database persistence throughout complete workflows
+- ✅ Error handling in real-world scenarios
+
+**E2E vs Unit Tests:**
+- **Unit Tests**: Fast, isolated component testing
+- **E2E Tests**: Slower, complete user journey validation
+- **Integration**: Both are orchestrated via `test_orchestrator.py` in logical TDD order
 
 ### Code Quality Commands
 

@@ -104,6 +104,9 @@ class AnalysisReportWindow:
         # Tab 4: Compliance Report
         self.setup_compliance_tab()
 
+        # Tab 5: Semantic Triples (only in factual mode)
+        self.setup_semantic_triples_tab()
+
     def setup_local_transparency_tab(self) -> None:
         """Setup local transparency tab showing original entities"""
         frame = ttk.Frame(self.notebook)
@@ -449,6 +452,11 @@ class AnalysisReportWindow:
             "transmission_preview": self.report.get_transmission_preview_section()
         }
 
+        # Add semantic triples section if in factual mode
+        summary = self.report.get_summary_stats()
+        if summary.get('factual_mode', False):
+            report_data["semantic_triples"] = self.report.get_semantic_triples_section()
+
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
 
@@ -471,7 +479,82 @@ class AnalysisReportWindow:
         content += self._format_processing_stats()
         content += "\n" + "="*80 + "\n\n"
 
+        # Add semantic triples section if in factual mode
+        summary = self.report.get_summary_stats()
+        if summary.get('factual_mode', False):
+            content += self._format_semantic_triples_data(self.report.get_semantic_triples_section())
+            content += "\n" + "="*80 + "\n\n"
+
         content += self._format_compliance_report()
+
+        return content
+
+    def setup_semantic_triples_tab(self) -> None:
+        """Setup semantic triples tab (only visible in factual mode)"""
+        # Check if factual mode is active
+        summary = self.report.get_summary_stats()
+        if not summary.get('factual_mode', False):
+            return  # Don't add tab if not in factual mode
+
+        frame = ttk.Frame(self.notebook)
+        self.notebook.add(frame, text="🧠 Semantic Triples")
+
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+
+        # Header
+        header = ttk.Label(frame, text="🧠 EXTRACTED SEMANTIC TRIPLES (FACTUAL MODE)",
+                          font=("TkDefaultFont", 12, "bold"))
+        header.grid(row=0, column=0, sticky=tk.W, padx=10, pady=10)
+
+        # Get semantic triples data
+        triples_data = self.report.get_semantic_triples_section()
+
+        if "error" in triples_data:
+            ttk.Label(frame, text=triples_data["error"]).grid(row=1, column=0, padx=10, pady=10)
+            return
+
+        # Create scrollable text area
+        text_frame = ttk.Frame(frame)
+        text_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=10, pady=(0, 10))
+        text_frame.columnconfigure(0, weight=1)
+        text_frame.rowconfigure(0, weight=1)
+
+        text_area = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, font=("Consolas", 9))
+        text_area.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        # Format and display semantic triples data
+        content = self._format_semantic_triples_data(triples_data)
+        text_area.insert(tk.END, content)
+        text_area.config(state="disabled")
+
+    def _format_semantic_triples_data(self, data: Dict[str, Any]) -> str:
+        """Format semantic triples data for display"""
+        content = f"{data['title']}\n"
+        content += "=" * len(data['title']) + "\n\n"
+        content += f"Total triples extracted: {data['total_triples']}\n"
+        content += f"Triple confidence: {data['confidence_range'][0]:.2f} - {data['confidence_range'][1]:.2f}\n\n"
+
+        if data['triples']:
+            content += "EXTRACTED KNOWLEDGE TRIPLES:\n"
+            content += "-" * 30 + "\n\n"
+
+            for i, triple in enumerate(data['triples'][:20], 1):  # Show first 20 triples
+                content += f"{i:2d}. {triple['subject']} → {triple['predicate']} → {triple['object']}\n"
+                if triple.get('confidence'):
+                    content += f"    Confidence: {triple['confidence']:.3f}\n"
+                if triple.get('source_info'):
+                    content += f"    Source: {triple['source_info']}\n"
+                content += "\n"
+
+            if len(data['triples']) > 20:
+                content += f"... and {len(data['triples']) - 20} more triples\n\n"
+        else:
+            content += "No semantic triples extracted from this document.\n\n"
+
+        content += f"\nNote: {data['note']}\n"
+        content += "\nSemantic triples represent factual relationships extracted from the document.\n"
+        content += "These structured facts enable advanced knowledge discovery and entity mapping.\n"
 
         return content
 
@@ -522,6 +605,18 @@ class AnalysisReportWindow:
         content += f"- **Factual Mode:** {'Yes' if compliance.factual_mode_active else 'No'}\n"
         content += f"- **Transmission Safe:** {'✅ Yes' if compliance.transmission_safe else '❌ No'}\n"
         content += f"- **Risk Assessment:** {compliance.risk_assessment}\n\n"
+
+        # Semantic Triples (if factual mode)
+        if summary.get('factual_mode', False):
+            triples_data = self.report.get_semantic_triples_section()
+            content += "## 🧠 Semantic Triples\n\n"
+            content += f"**Total triples extracted:** {triples_data['total_triples']}\n\n"
+
+            if triples_data['triples']:
+                content += "### Knowledge Triples\n\n"
+                for i, triple in enumerate(triples_data['triples'][:10], 1):  # First 10 for markdown
+                    content += f"{i}. {triple['subject']} → {triple['predicate']} → {triple['object']}\n"
+                content += "\n"
 
         # Processing Stats
         content += "## ⏱️ Processing Statistics\n\n"

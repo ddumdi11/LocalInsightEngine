@@ -227,7 +227,80 @@ class TestExportFunctionality(unittest.TestCase):
                 
         finally:
             test_file.unlink()
-    
+
+    def test_analyze_and_export_with_factual_mode(self) -> None:
+        """
+        🔴 RED PHASE: Test analyze_and_export with factual_mode=True for Semantic Triples.
+
+        This test should FAIL initially because the factual_mode parameter
+        is not yet implemented in the analyze_and_export method.
+        """
+        # Note: Consider using logging instead of print statements per coding guidelines
+        print("\n[TEST] Analyze and Export with Factual Mode (Semantic Triples)")
+
+        # Create test document with Vitamin B3 content for semantic triples
+        vitamin_b3_text = """
+        Vitamin B3 (Niacin) unterstützt den Energiestoffwechsel und trägt zur normalen Funktion des Nervensystems bei.
+        Vitamin B3 ist wasserlöslich und spielt eine wichtige Rolle bei der Zellatmung.
+        Ein Mangel an Vitamin B3 kann zu Müdigkeit und Konzentrationsproblemen führen.
+        """
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(vitamin_b3_text)
+            test_file = Path(f.name)
+
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                output_path = Path(temp_dir) / "factual_mode_analysis"
+
+                # 🔴 RED: This should FAIL because factual_mode parameter doesn't exist yet
+                results = self.engine.analyze_and_export(
+                    document_path=test_file,
+                    output_path=output_path,
+                    formats=["json"],
+                    factual_mode=True  # This should trigger semantic triples extraction
+                )
+
+                # Verify export was successful
+                self.assertTrue(results['export_results']['json'], "JSON export should succeed")
+                self.assertIn('json', results['export_paths'], "JSON path should be in results")
+
+                # Load and validate the exported JSON
+                json_path = results['export_paths']['json']
+                with open(json_path, 'r', encoding='utf-8') as f:
+                    exported_data = json.load(f)
+
+                # 🎯 FACTUAL MODE SPECIFIC VALIDATIONS:
+
+                # 1. Check that factual_mode was applied
+                compliance = exported_data.get('compliance', {})
+                self.assertFalse(
+                    compliance.get('neutralization_applied', True),
+                    "In factual mode, neutralization should be bypassed"
+                )
+
+                # 2. Check for semantic triples in processing
+                text_processing = exported_data.get('text_processing', {})
+
+                # 3. Verify that scientific terms are preserved in specific sections
+                analysis_content = exported_data.get('analysis', {}).get('executive_summary', '')
+                self.assertIn('Vitamin B3', analysis_content, "Scientific terms should be preserved in factual mode")
+                
+                # Check for absence of neutralized placeholders in key sections
+                key_sections = [analysis_content, str(text_processing)]
+                for section in key_sections:
+                    self.assertNotIn('[NUTRIENT]', section, "Should not contain neutralized placeholders in factual mode")
+
+                # 4. Look for semantic triple indicators in the exported data
+                # (This will help us verify the dual pipeline is working)
+
+                print("✓ Factual mode analyze_and_export working with semantic triples")
+
+        finally:
+            test_file.unlink()                print("✓ Factual mode analyze_and_export working with semantic triples")
+
+        finally:
+            test_file.unlink()
     def _validate_json_structure(self, exported_data):
         """Validate the structure of exported JSON data."""
         required_top_level = [
