@@ -34,6 +34,9 @@ class LocalInsightEngineGUI:
         self.current_document: Optional[Path] = None
         self.analysis_result: Optional[AnalysisResult] = None
 
+        # Load context defaults after engine is initialized
+        self.load_context_defaults()
+
         self.setup_ui()
 
     def setup_ui(self):
@@ -133,8 +136,45 @@ class LocalInsightEngineGUI:
 
     def setup_qa_section(self, parent):
         """Setup Q&A section"""
+        # Context window configuration frame
+        context_frame = ttk.LabelFrame(parent, text="Context Window Settings", padding="5")
+        context_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 5))
+        context_frame.columnconfigure(2, weight=1)
+
+        # Context before setting
+        ttk.Label(context_frame, text="Context before hit:").grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
+        self.context_before_var = tk.IntVar(value=2)
+        self.context_before_spinbox = ttk.Spinbox(
+            context_frame,
+            from_=0,
+            to=10,
+            width=5,
+            textvariable=self.context_before_var,
+            command=self.on_context_change
+        )
+        self.context_before_spinbox.grid(row=0, column=1, padx=(0, 15))
+
+        # Context after setting
+        ttk.Label(context_frame, text="Context after hit:").grid(row=0, column=2, sticky=tk.W, padx=(0, 5))
+        self.context_after_var = tk.IntVar(value=3)
+        self.context_after_spinbox = ttk.Spinbox(
+            context_frame,
+            from_=0,
+            to=10,
+            width=5,
+            textvariable=self.context_after_var,
+            command=self.on_context_change
+        )
+        self.context_after_spinbox.grid(row=0, column=3, padx=(0, 15))
+
+        # Save as default button
+        ttk.Button(context_frame, text="Save as Default", command=self.save_context_defaults).grid(
+            row=0, column=4, padx=(5, 0)
+        )
+
+        # Q&A section
         qa_frame = ttk.LabelFrame(parent, text="Q&A - Ask questions about your document", padding="5")
-        qa_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
+        qa_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         qa_frame.columnconfigure(0, weight=1)
         qa_frame.rowconfigure(1, weight=1)
         parent.rowconfigure(2, weight=1)
@@ -345,6 +385,16 @@ class LocalInsightEngineGUI:
     def _ask_question_bg(self, question: str):
         """Background thread for Q&A"""
         try:
+            # Update engine config with current GUI context settings
+            if hasattr(self.engine, 'config'):
+                # Ensure Search section exists
+                if not self.engine.config.has_section('Search'):
+                    self.engine.config.add_section('Search')
+
+                # Update with current GUI values
+                self.engine.config.set('Search', 'context_chunks_before', str(self.context_before_var.get()))
+                self.engine.config.set('Search', 'context_chunks_after', str(self.context_after_var.get()))
+
             # Use the engine's new answer_question method that searches through original chunks
             answer = self.engine.answer_question(question)
 
@@ -489,6 +539,59 @@ GUI Features:
         except Exception as e:
             self.log_message(f"✗ Failed to open analysis report: {e}")
             messagebox.showerror("Report Error", f"Failed to open analysis report:\n{e}")
+
+    def on_context_change(self):
+        """Handle context window setting changes"""
+        before = self.context_before_var.get()
+        after = self.context_after_var.get()
+        self.log_message(f"Context window updated: {before} before, {after} after hit")
+
+    def save_context_defaults(self):
+        """Save current context settings as defaults to config file"""
+        try:
+            import configparser
+            from pathlib import Path
+
+            config_path = Path("localinsightengine.conf")
+            config = configparser.ConfigParser()
+
+            # Read existing config
+            if config_path.exists():
+                config.read(config_path, encoding='utf-8')
+
+            # Ensure Search section exists
+            if not config.has_section('Search'):
+                config.add_section('Search')
+
+            # Update values
+            config.set('Search', 'context_chunks_before', str(self.context_before_var.get()))
+            config.set('Search', 'context_chunks_after', str(self.context_after_var.get()))
+
+            # Write back to file
+            with open(config_path, 'w', encoding='utf-8') as f:
+                config.write(f)
+
+            before = self.context_before_var.get()
+            after = self.context_after_var.get()
+            self.log_message(f"✓ Context defaults saved: {before} before, {after} after hit")
+            messagebox.showinfo("Settings Saved", f"Context window defaults saved:\n{before} chunks before, {after} chunks after hit")
+
+        except Exception as e:
+            self.log_message(f"✗ Failed to save context defaults: {e}")
+            messagebox.showerror("Save Error", f"Failed to save context defaults:\n{e}")
+
+    def load_context_defaults(self):
+        """Load context settings from config file"""
+        try:
+            if hasattr(self, 'engine') and self.engine:
+                before = int(self.engine.config.get('Search', 'context_chunks_before', fallback='2'))
+                after = int(self.engine.config.get('Search', 'context_chunks_after', fallback='3'))
+
+                self.context_before_var.set(before)
+                self.context_after_var.set(after)
+                self.log_message(f"Context defaults loaded: {before} before, {after} after hit")
+        except Exception as e:
+            self.log_message(f"Could not load context defaults: {e}")
 
     def run(self):
         """Start the GUI application"""
